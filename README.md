@@ -15,3 +15,7 @@
 
 - [hanzi-flashcards](https://github.com/feihong/hanzi-flashcards)
 - [Make Me a Hanzi animated SVGs](https://github.com/skishore/makemeahanzi/tree/master/svgs)
+
+## Notes
+
+Avoid using `const` variables at the global level.

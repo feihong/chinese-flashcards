@@ -1,12 +1,14 @@
-<p>Say {{Front}}</p>
+<div id="fbb8d316-18ff-4832-a503-4fe09a054100">
+  <p>Say {{Front}}</p>
 
-<button id="button" disabled onclick="start()">Listen</button>
+  <button disabled onclick="start()">Listen</button>
 
-<p>
-  <div id="warning">Run this in a browser that supports speech recognition</div>
-  <div id="transcript"></div>
-  <div id="confidence"></div>
-</p>
+  <p>
+    <div class="warning">Run this in a browser that supports speech recognition</div>
+    <div class="transcript"></div>
+    <div class="confidence"></div>
+  </p>
+</div>
 
 <script>
 function getSpeechRecognition() {
@@ -19,18 +21,25 @@ function getSpeechRecognition() {
   return null
 }
 
-const button = document.getElementById('button')
 const recognition = getSpeechRecognition()
 if (recognition != null) {
-  document.getElementById('warning').innerText = ''
+  const root = document.getElementById('fbb8d316-18ff-4832-a503-4fe09a054100')
+
+  root.querySelector('.warning').innerText = ''
+
+  const button = root.querySelector('button')
   button.disabled = false
   recognition.lang = 'zh-CN'
   recognition.onspeechend = () => recognition.stop()
   recognition.onresult = event => {
     button.innerText = 'Listen'
     const result = event.results[0][0]
-    document.getElementById('transcript').innerText = 'Transcript: ' + result.transcript
-    document.getElementById('confidence').innerText = `Confidence: ${(result.confidence * 100).toFixed(1)}%`
+    root.querySelector('.transcript').innerText = 'Transcript: ' + result.transcript
+    const confidence = result.confidence * 100
+    const confidenceEl = root.querySelector('.confidence')
+    confidenceEl.innerText = `Confidence: ${confidence.toFixed(1)}%`
+    const color = confidence > 90 ? 'green' : 'red'
+    confidenceEl.style = `color: ${color}`
   }
 
   function start() {

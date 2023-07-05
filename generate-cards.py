@@ -28,7 +28,8 @@ def get_words():
 
 def get_word_card_lines():
   for entry in db.get_entries_for_words(get_words()):
-    yield ';'.join(('Chinese', entry.simp, '', entry.pinyin, entry.gloss))
+    pinyin = entry.pinyin.replace(' ', '').replace('5', '')
+    yield ';'.join(('Chinese', entry.simp, '', pinyin, entry.gloss))
 
 def generate_word_cards():
   with word_cards_file.open('w', encoding='utf8') as fp:

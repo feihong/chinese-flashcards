@@ -1,17 +1,6 @@
-<button onclick="say()">Speak</button>
-<p>Write the spoken word below</p>
-<div><input onchange="window.answer = this.value"></div>
+What is the pinyin for "{{Front}}"?
 
-<script>
-function say() {
-  const text = '{{Front}}'
-  // const text = '月亮'
-  const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = 'zh-CN'
-  utterance.rating = 0.75
-  speechSynthesis.speak(utterance)
-}
-</script>
+<div><input onchange="window.answer = this.value"></div>
 
 <!-- ********************************************************************** -->
 
@@ -19,7 +8,7 @@ function say() {
 
 <hr id="answer">
 
-{{Front}}
+{{pinyin}}
 
 <p>
   Your answer: <span id="db7bbb8f-1709-4f9e-9c84-11d267a4b556"></span>
@@ -30,7 +19,7 @@ function say() {
   const answer = typeof window.answer === 'string' ? window.answer.trim() : ''
   const answerEl = document.getElementById('db7bbb8f-1709-4f9e-9c84-11d267a4b556')
   answerEl.innerText = answer === "" ? "(blank)" : answer
-  const color = answer === '{{Front}}' ? 'green' : 'red'
+  const color = answer === '{{pinyin}}' ? 'green' : 'red'
   answerEl.style = `color: ${color}`
 }
 </script>

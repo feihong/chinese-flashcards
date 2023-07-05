@@ -3,12 +3,11 @@
 <button onclick="say()">Speak</button>
 
 <script>
-// const text = '{{Text}}'
-const text = '今晚的{{c1::月亮}}很圆，所以狼人都很开心'
-const regex = new RegExp('{' + '{' + 'c' + '\\d+::.*}}')
-const spokenText = text.replace(regex, (match) => '什么')
-
 function say() {
+  const text = '{{Text}}'
+  const regex = new RegExp('{' + '{' + 'c' + '\\d+::.*}}')
+  const spokenText = text.replace(regex, (match) => '什么')
+
   const utterance = new SpeechSynthesisUtterance(spokenText)
   utterance.lang = 'zh-CN'
   utterance.rate = 0.75
