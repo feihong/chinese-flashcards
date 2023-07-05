@@ -1,0 +1,41 @@
+<p>Say {{Front}}</p>
+
+<button id="button" disabled onclick="start()">Listen</button>
+
+<p>
+  <div id="warning">Run this in a browser that supports speech recognition</div>
+  <div id="transcript"></div>
+  <div id="confidence"></div>
+</p>
+
+<script>
+function getSpeechRecognition() {
+  if ('SpeechRecognition' in window) {
+    return SpeechRecognition
+  }
+  if ('webkitSpeechRecognition' in window) {
+    return new webkitSpeechRecognition()
+  }
+  return null
+}
+
+const button = document.getElementById('button')
+const recognition = getSpeechRecognition()
+if (recognition != null) {
+  document.getElementById('warning').innerText = ''
+  button.disabled = false
+  recognition.lang = 'zh-CN'
+  recognition.onspeechend = () => recognition.stop()
+  recognition.onresult = event => {
+    button.innerText = 'Listen'
+    const result = event.results[0][0]
+    document.getElementById('transcript').innerText = 'Transcript: ' + result.transcript
+    document.getElementById('confidence').innerText = `Confidence: ${(result.confidence * 100).toFixed(1)}%`
+  }
+
+  function start() {
+    button.innerText = 'Listening...'
+    recognition.start()
+  }
+}
+</script>

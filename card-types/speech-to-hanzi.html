@@ -1,0 +1,14 @@
+<button onclick="say()">Speak</button>
+<p>Write the spoken word below</p>
+{{type:Back}}
+
+<script>
+// const text = '{{Front}}'
+const text = '月亮'
+function say() {
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = 'zh-CN'
+  utterance.rating = 0.75
+  speechSynthesis.speak(utterance)
+}
+</script>
