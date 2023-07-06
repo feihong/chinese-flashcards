@@ -16,7 +16,7 @@ What is the pinyin for “{{Front}}”?
 
 <script>
 {
-  const answer = typeof window.answer === 'string' ? window.answer.trim() : ''
+  const answer = typeof window.answer === 'string' ? window.answer.trim().toLowerCase() : ''
   const answerEl = document.getElementById('db7bbb8f-1709-4f9e-9c84-11d267a4b556')
   answerEl.innerText = answer === "" ? "(blank)" : answer
   const color = answer === '{{pinyin}}' ? 'green' : 'red'

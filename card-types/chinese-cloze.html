@@ -1,11 +1,11 @@
 {{cloze:Text}}
 
-<button onclick="say()">Speak</button>
+<div><button onclick="say()">Speak</button></div>
 
 <script>
 function say() {
   const text = '{{Text}}'
-  const regex = new RegExp('{' + '{' + 'c' + '\\d+::.*}}')
+  const regex = new RegExp('{' + '{' + 'c' + '\\d+::.*}}', 'g')
   const spokenText = text.replace(regex, (match) => '什么')
 
   const utterance = new SpeechSynthesisUtterance(spokenText)
@@ -14,3 +14,8 @@ function say() {
   speechSynthesis.speak(utterance)
 }
 </script>
+
+<!-- ********************************************************************** -->
+
+{{cloze:Text}}<br>
+{{Back Extra}}
