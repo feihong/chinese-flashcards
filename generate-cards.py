@@ -3,8 +3,8 @@ import db
 import re
 
 words_file = Path('words.txt')
+word_cards_file = Path('cards.txt')
 examples_file = Path('examples.txt')
-word_cards_file = Path('word-cards.txt')
 example_cards_file = Path('example-cards.txt')
 
 WORDS_HEADER = """\
@@ -32,7 +32,7 @@ def get_word_card_lines():
     yield ';'.join(('Chinese', entry.simp, '', pinyin, entry.gloss))
 
 def generate_word_cards():
-  with word_cards_file.open('w', encoding='utf8') as fp:
+  with word_cards_file.open('a', encoding='utf8') as fp:
     fp.write(WORDS_HEADER)
     for line in get_word_card_lines():
       fp.write(line + '\n')
@@ -62,4 +62,4 @@ def generate_example_cards():
 if __name__ == '__main__':
   generate_word_cards()
 
-  generate_example_cards()
+  # generate_example_cards()
