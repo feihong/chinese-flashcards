@@ -1,0 +1,35 @@
+<button onclick="say()">Speak</button>
+<p>Listen to the word and write its hanzi below</p>
+<div><input autocomplete="off" onchange="window.answer = this.value"></div>
+
+<script>
+window.answer = ''
+
+window.say = function() {
+  const text = '{{Front}}'
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = 'zh-CN'
+  utterance.rating = 0.75
+  speechSynthesis.speak(utterance)
+}
+</script>
+<!--*****-->
+{{Front}}
+
+<hr id="answer">
+
+{{Front}}
+
+<p>
+  Your answer: <span id="db7bbb8f-1709-4f9e-9c84-11d267a4b556"></span>
+</p>
+
+<script>
+{
+  const answer = typeof window.answer === 'string' ? window.answer.trim() : ''
+  const answerEl = document.getElementById('db7bbb8f-1709-4f9e-9c84-11d267a4b556')
+  answerEl.innerText = answer === "" ? "(blank)" : answer
+  const color = answer === '{{Front}}' ? 'green' : 'red'
+  answerEl.style = `color: ${color}`
+}
+</script>

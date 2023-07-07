@@ -11,6 +11,17 @@
 - example (cloze with speech hint)
 - pinyin to handwriting (show strokes)
 
+## Configuration of Import / Export templates add-on
+
+```json
+{
+    "CSS file name": "style.css",
+    "delimiter between front and back template": "\n<!--*****-->\n",
+    "filename extensions for card template files": ".html",
+    "insert global CSS before individual ones of all note types": false
+}
+```
+
 ## Links
 
 - [hanzi-flashcards](https://github.com/feihong/hanzi-flashcards)
