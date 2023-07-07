@@ -10,19 +10,26 @@
     const voiceEl = document.getElementById("a0c2eebe-ff76-4f7a-9245-f6610e607a69")
     voiceEl.innerText = `using voice ${window.chineseVoice.name}`
   }
-
-  speechSynthesis.addEventListener('voiceschanged', () => {
+  const setChineseVoice = () => {
     const chineseVoices = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')
     if (chineseVoices.length === 0) {
-      return null
+      return
     }
     const lili = chineseVoices.find(v => v.name.toLowerCase() === 'lili')
     window.chineseVoice = lili !== undefined ? lili : chineseVoices[0]
     showVoice()
-  })
+  }
 
   if (window.chineseVoice !== undefined) {
     showVoice()
+  } else {
+    const voices = speechSynthesis.getVoices()
+    if (voices.length !== 0) {
+      setChineseVoice()
+    } else {
+      // We only need to do this on Chrome
+      speechSynthesis.addEventListener('voiceschanged', () => setChineseVoice())
+    }
   }
 
   window.say = function() {
