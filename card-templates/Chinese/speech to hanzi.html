@@ -15,7 +15,7 @@
     if (chineseVoices.length === 0) {
       return
     }
-    const lili = chineseVoices.find(v => v.name.toLowerCase() === 'lili')
+    const lili = chineseVoices.find(v => v.name.toLowerCase() === 'lili (premium)')
     window.chineseVoice = lili !== undefined ? lili : chineseVoices[0]
     showVoice()
   }
