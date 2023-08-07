@@ -1,0 +1,64 @@
+{{cloze:Text}}
+
+<script async>
+if (window.MathJax === undefined) {
+  window.MathJax = {
+    startup: {
+      typeset: false,
+      ready: () => {
+        MathJax.startup.defaultReady();
+        MathJax.typeset([document.querySelector(".card")]);
+      },
+    },
+    loader: {
+      load: ['input/asciimath', 'output/chtml', 'ui/menu']
+    },
+    asciimath: {
+      delimiters: [['`', '`']]
+    },
+    svg: {
+      fontCache: 'global'
+    }
+  };
+
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
+  script.async = true;
+  document.head.appendChild(script);
+} else {
+  MathJax.typeset([document.querySelector(".card")]);
+}
+</script>
+<!--*****-->
+{{cloze:Text}}<br>
+{{Back Extra}}
+
+<script async>
+if (window.MathJax === undefined) {
+  window.MathJax = {
+    startup: {
+      typeset: false,
+      ready: () => {
+        MathJax.startup.defaultReady();
+        MathJax.typeset([document.querySelector(".card")]);
+      },
+    },
+    loader: {
+      load: ['input/asciimath', 'output/chtml', 'ui/menu']
+    },
+    asciimath: {
+      delimiters: [['`', '`']]
+    },
+    svg: {
+      fontCache: 'global'
+    }
+  };
+
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
+  script.async = true;
+  document.head.appendChild(script);
+} else {
+  MathJax.typeset([document.querySelector(".card")]);
+}
+</script>

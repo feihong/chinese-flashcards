@@ -25,7 +25,9 @@ Add pinyin input method
 - Chinese, Simplified > Pinyin - Simplified
 - Click `Add`
 
-## Configuration of Import / Export templates add-on
+## Export your card templates
+
+Set configuration of "Import / Export templates" add-on
 
 ```json
 {
@@ -35,6 +37,8 @@ Add pinyin input method
     "insert global CSS before individual ones of all note types": false
 }
 ```
+
+To export, select `Tools > Import / Export templates > Export...` from the menu.
 
 ## Links
 
