@@ -29,5 +29,12 @@ html = f"""\
 
 Path(output_dir / 'index.html').write_text(html)
 
-cmd = ['ghp-import', '--no-jekyll', output_dir]
+cmd = [
+  'ghp-import',
+  '--no-jekyll',
+  '--push',
+  '--no-history',
+  output_dir]
 subprocess.run(cmd)
+
+print(f'Deployed to https://feihong.github.io/chinese-flashcards/')
