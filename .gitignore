@@ -2,6 +2,7 @@
 __pycache__
 
 makemeahanzi/
+public/
 
 cedict.txt.gz
 cedict.sqlite3

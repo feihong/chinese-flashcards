@@ -1,4 +1,4 @@
-{
+(function(){
   if (window.MathJax === undefined) {
     window.MathJax = {
       startup: {
@@ -34,4 +34,4 @@
       MathJax.typeset([preview]);
     })
   }
-}
+})();
