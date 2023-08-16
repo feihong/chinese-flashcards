@@ -7,9 +7,10 @@ output_dir = Path('public')
 if not output_dir.exists():
   output_dir.mkdir()
 
-shutil.copy('reference/bookmarklet.html', output_dir)
+shutil.copy('content/bookmarklet.html', output_dir)
+shutil.copy('content/asciimath-playground.html', output_dir)
 
-js = 'javascript:' + urllib.parse.quote(Path('reference/asciimath-preview.js').read_text().strip())
+js = 'javascript:' + urllib.parse.quote(Path('content/asciimath-preview.js').read_text().strip())
 
 html = f"""\
 <!doctype html>
