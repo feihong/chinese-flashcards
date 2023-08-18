@@ -39,8 +39,10 @@ What is the hanzi for “{{pinyin}}”?
     diagramsEl.appendChild(divEl)
   }
 
-  for (const charCode of charCodes) {
-    addStrokeDiv(charCode)
+  if (diagramsEl !== null) {
+    for (const charCode of charCodes) {
+      addStrokeDiv(charCode)
+    }
   }
 }
 </script>

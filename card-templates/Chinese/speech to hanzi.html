@@ -1,15 +1,16 @@
 <button onclick="say()">Speak</button> <span id="a0c2eebe-ff76-4f7a-9245-f6610e607a69"></span>
 <p>Listen to the word and write its hanzi below</p>
-<div><input autocomplete="off" onchange="window.answer = this.value"></div>
+<div><input autocomplete="off" onchange="localStorage.setItem('answer', this.value)"></div>
 
 <script>
 {
-  window.answer = ''
-
   const showVoice = () => {
     const voiceEl = document.getElementById("a0c2eebe-ff76-4f7a-9245-f6610e607a69")
-    voiceEl.innerText = `using voice ${window.chineseVoice.name}`
+    if (voiceEl !== null) {
+      voiceEl.innerText = `using voice ${window.chineseVoice.name}`
+    }
   }
+
   const setChineseVoice = () => {
     const chineseVoices = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')
     if (chineseVoices.length === 0) {
@@ -59,10 +60,12 @@
 
 <script>
 {
-  const answer = typeof window.answer === 'string' ? window.answer.trim() : ''
+  const answer = (localStorage.getItem('answer') || '').trim().toLowerCase()
   const answerEl = document.getElementById('db7bbb8f-1709-4f9e-9c84-11d267a4b556')
-  answerEl.innerText = answer === "" ? "(blank)" : answer
-  const color = answer === '{{Front}}' ? 'green' : 'red'
-  answerEl.style = `color: ${color}`
+  if (answer !== null && answerEl !== null) {
+    answerEl.innerText = answer === "" ? "(blank)" : answer
+    const color = answer === '{{Front}}' ? 'green' : 'red'
+    answerEl.style = `color: ${color}`
+  }
 }
 </script>

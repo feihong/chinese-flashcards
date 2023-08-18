@@ -12,8 +12,6 @@
 
 <script>
 {
-  window.answer = ''
-
   const getSpeechRecognition = function() {
     if (window.SpeechRecognition !== undefined) {
       return SpeechRecognition()
@@ -25,8 +23,8 @@
   }
 
   const recognition = getSpeechRecognition()
-  if (recognition !== null) {
-    const root = document.getElementById('fbb8d316-18ff-4832-a503-4fe09a054100')
+  const root = document.getElementById('fbb8d316-18ff-4832-a503-4fe09a054100')
+  if (recognition !== null && root !== null) {
     root.querySelector('.warning').innerText = ''
 
     const button = root.querySelector('button')
@@ -37,7 +35,7 @@
       button.innerText = 'Listen'
       const result = event.results[0][0]
       root.querySelector('.transcript').innerText = 'Transcript: ' + result.transcript
-      window.answer = result.transcript
+      localStorage.setItem('answer', result.transcript)
       const confidence = result.confidence * 100
       const confidenceEl = root.querySelector('.confidence')
       confidenceEl.innerText = `Confidence: ${confidence.toFixed(1)}%`
@@ -65,10 +63,12 @@
 
 <script>
 {
-  const answer = typeof window.answer === 'string' ? window.answer.trim() : ''
+  const answer = localStorage.getItem('answer')
   const answerEl = document.getElementById('db7bbb8f-1709-4f9e-9c84-11d267a4b556')
-  answerEl.innerText = answer === "" ? "(blank)" : answer
-  const color = answer === '{{Front}}' ? 'green' : 'red'
-  answerEl.style = `color: ${color}`
+  if (answer !== null && answerEl !== null) {
+    answerEl.innerText = answer === "" ? "(blank)" : answer
+    const color = answer.includes('{{Front}}') ? 'green' : 'red'
+    answerEl.style = `color: ${color}`
+  }
 }
 </script>
