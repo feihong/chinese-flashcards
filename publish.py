@@ -3,12 +3,14 @@ import shutil
 from pathlib import Path
 import urllib.parse
 
+content_dir = Path('content')
+
 output_dir = Path('public')
 if not output_dir.exists():
   output_dir.mkdir()
 
-shutil.copy('content/bookmarklet.html', output_dir)
-shutil.copy('content/asciimath-playground.html', output_dir)
+for file in ['bookmarklet.html', 'asciimath-playground.html', 'speak-playground.html']:
+  shutil.copy(content_dir / file, output_dir)
 
 js = 'javascript:' + urllib.parse.quote(Path('content/asciimath-preview.js').read_text().strip())
 
