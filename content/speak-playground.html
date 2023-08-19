@@ -29,6 +29,7 @@ function say() {
   const text = document.getElementById('input').value
   const utterance = new SpeechSynthesisUtterance(text)
   utterance.lang = 'zh-CN'
+  utterance.voice = window.voice
   speechSynthesis.speak(utterance)
 }
 
@@ -54,6 +55,10 @@ window.addEventListener('load', async () => {
     const li = document.createElement('li')
     li.innerText = `${voice.name} (${voice.voiceURI})`
     voicesEl.appendChild(li)
+  }
+
+  if (voices.length > 0) {
+    window.voice = voices[0]
   }
 })
 </script>

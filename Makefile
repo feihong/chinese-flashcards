@@ -6,3 +6,6 @@ download_svg:
 
 publish:
 	python publish.py
+
+serve:
+	python -m http.server
