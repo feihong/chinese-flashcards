@@ -48,6 +48,8 @@ To export, select `Tools > Import / Export templates > Export...` from the menu.
 - [Make Me a Hanzi animated SVGs](https://github.com/skishore/makemeahanzi/tree/master/svgs)
 - [Anki add-on to export/import card templates](https://github.com/Asu4ni/Templates-Import-Export-for-Anki)
 - [Anki-Connect add-on](https://github.com/FooSoft/anki-connect)
+- [Anki Docs: Customizing MathJax](https://faqs.ankiweb.net/customizing-mathjax.html)
+- [Anki Source: MathJax configuration](https://github.com/ankitects/anki/blob/78b4a391cc9bf3a127fe3a11984bff75b909b136/ts/mathjax/index.ts)
 - [SE Chat MathJax Chrome Extension](https://github.com/dvdfreitag/SE-Chat-MathJax)
 
 ## Notes
