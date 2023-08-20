@@ -14,12 +14,14 @@
 ## System configuration
 
 Set system voice to Chinese
+
 - System Settings > Accessibility > Spoken Content
 - Set `System speech language` to Chinese
 - Set `System Voice` to Lili
 - Set `Speaking rate` to be a bit slower
 
 Add pinyin input method
+
 - System Settings > Keyboard > Text Input > Input Sources > Edit...
 - Click the `+` button in the lower left corner
 - Chinese, Simplified > Pinyin - Simplified

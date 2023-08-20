@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speech Recognition Playground</title>
+</head>
+<body>
+<h1>Speech Recognition Playground</h1>
+
+<button id="button" onclick="start()">Start</button>
+<div>
+  <div id="status">idle</div>
+  <div id="transcript"></div>
+  <div id="confidence"></div>
+</div>
+
+<script>
+const recognition = new webkitSpeechRecognition()
+recognition.lang = 'zh-CN'
+
+const buttonEl = document.getElementById('button')
+const statusEl = document.getElementById('status')
+const transcriptEl = document.getElementById('transcript')
+const confidenceEl = document.getElementById('confidence')
+
+recognition.onstart = () => {
+  statusEl.innerText = 'listening'
+}
+
+recognition.onend = () => {
+  statusEl.innerText = 'idle'
+}
+
+// Doesn't work on Safari
+recognition.onspeechend = () => {
+  console.log('onspeechend')
+  recognition.stop()
+}
+
+// Doesn't work on Safari
+recognition.onsoundend = () => {
+  console.log('onsoundend');
+  recognition.stop()
+}
+
+recognition.onresult = event => {
+  const result = event.results[0][0]
+  transcriptEl.innerText = result.transcript
+  confidenceEl.innerText = `${(result.confidence * 100).toFixed(1)}%`
+}
+
+function start() {
+  if (buttonEl.innerText.toLowerCase() === 'start') {
+    buttonEl.innerText = 'Stop'
+    recognition.start()
+  } else {
+    buttonEl.innerText = 'Start'
+    recognition.stop()
+  }
+}
+</script>
+</body>
+</html>

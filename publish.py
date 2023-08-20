@@ -9,7 +9,8 @@ output_dir = Path('public')
 if not output_dir.exists():
   output_dir.mkdir()
 
-for file in ['bookmarklet.html', 'asciimath-playground.html', 'speak-playground.html']:
+files = ['bookmarklet.html', 'asciimath-playground.html', 'speak-playground.html', 'listen-playground.html']
+for file in files:
   shutil.copy(content_dir / file, output_dir)
 
 js = 'javascript:' + urllib.parse.quote(Path('content/asciimath-preview.js').read_text().strip())
