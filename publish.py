@@ -9,7 +9,8 @@ output_dir = Path('public')
 if not output_dir.exists():
   output_dir.mkdir()
 
-files = ['bookmarklet.html', 'asciimath-playground.html', 'speak-playground.html', 'listen-playground.html']
+files = ['bookmarklet.html', 'asciimath-playground.html', 'speak-playground.html', 'listen-playground.html',
+         'asciimath2latex.js']
 for file in files:
   shutil.copy(content_dir / file, output_dir)
 
