@@ -23,8 +23,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-
-(function() {
+{
   var config = {
     decimalsign: ".",           // change to "," if you like, beware of `(1,2)`!
   };                                // for IE this works only in <!--   -->
@@ -896,7 +895,7 @@ THE SOFTWARE.
       } else if (c === '`') {
         i += 1;
         const expr = readExpr();
-        output.push('\\[' + expr + '\\]')
+        output.push('\\(' + expr + '\\)')
       } else {
         if (output.length === 0) {
           output.push(c)
@@ -913,10 +912,11 @@ THE SOFTWARE.
   window.AMTparseAMtoTeX = AMTparseAMtoTeX;
   window.AMTconvert = AMTconvert;
 
-  const cardEl = document.querySelector('.card');
-  if (cardEl !== null) {
-    cardEl.innerHTML = AMTconvert(cardEl.innerHTML);
-    MathJax.typeset([cardEl]);
-  }
+}
 
-})();
+{
+  console.log('Custom script');
+  for (const cardEl of document.querySelectorAll('.math-1f960074-6883-4e97-b1bd-1bbfd36be0cb')) {
+    cardEl.innerHTML = AMTconvert(cardEl.innerHTML);
+  }
+}
