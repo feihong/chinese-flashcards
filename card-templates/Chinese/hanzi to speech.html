@@ -1,5 +1,5 @@
 <div id="fbb8d316-18ff-4832-a503-4fe09a054100">
-  <p>Say “{{Front}}”</p>
+  <p>Say “{{example}}”</p>
 
   <button disabled onclick="listen()">Listen</button>
 
@@ -34,8 +34,13 @@
     recognition.onresult = event => {
       button.innerText = 'Listen'
       const result = event.results[0][0]
-      root.querySelector('.transcript').innerText = 'Transcript: ' + result.transcript
+      const transcriptEl = root.querySelector('.transcript')
+      transcriptEl.innerText = 'Transcript: ' + result.transcript
+      const transcriptColor = result.transcript === "{{example}}" ? 'green' : 'red'
+      transcriptEl.style = `color: ${transcriptColor}`
+
       localStorage.setItem('answer', result.transcript)
+
       const confidence = result.confidence * 100
       const confidenceEl = root.querySelector('.confidence')
       confidenceEl.innerText = `Confidence: ${confidence.toFixed(1)}%`
@@ -51,11 +56,11 @@
 }
 </script>
 <!--*****-->
-{{Front}}
+{{example}}
+<br>
+(Example for {{Front}})
 
 <hr id="answer">
-
-{{Front}}
 
 <p>
   Your answer: <span id="db7bbb8f-1709-4f9e-9c84-11d267a4b556"></span>
@@ -67,7 +72,7 @@
   const answerEl = document.getElementById('db7bbb8f-1709-4f9e-9c84-11d267a4b556')
   if (answer !== null && answerEl !== null) {
     answerEl.innerText = answer === "" ? "(blank)" : answer
-    const color = answer.includes('{{Front}}') ? 'green' : 'red'
+    const color = answer === "{{example}}" ? 'green' : 'red'
     answerEl.style = `color: ${color}`
   }
 }
