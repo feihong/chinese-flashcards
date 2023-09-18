@@ -23,14 +23,13 @@
 
   for (const field of document.querySelectorAll('div.form-control.field')) {
     const previewContainer = document.createElement('div');
-    previewContainer.style = 'color: #888; padding-top: 0.5em; display: flex; flex-direction: row;  align-items: center; gap: 0.5em;'
+    previewContainer.style = 'color: #888; padding-top: 0.5em; display: flex; flex-direction: row;  align-items: center; gap: 0.5em; white-space: pre-line;'
     previewContainer.innerText = 'AsciiMath preview: '
     const preview = document.createElement('div');
     previewContainer.appendChild(preview);
     field.parentNode.appendChild(previewContainer);
     field.addEventListener('input', _evt => {
-      // console.log(field.innerHTML);
-      preview.textContent = field.textContent;
+      preview.textContent = field.innerText;
       MathJax.typeset([preview]);
     })
   }

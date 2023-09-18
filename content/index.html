@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8" >
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AsciiMath Preview Bookmarklet for Anki</title>
+</head>
+<body>
+<h1>AsciiMath Preview Bookmarklet for Anki</h1>
+<a id="bookmarklet" href="">AsciiMath preview</a>
+<script async>
+async function main() {
+  const response = await fetch('asciimath-preview.js')
+  const code = await response.text()
+  document.getElementById('bookmarklet').href = 'javascript:' + encodeURI(code.trim())
+}
+main()
+</script>
+</body>
+</html>
