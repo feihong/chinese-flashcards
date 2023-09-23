@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speech Synthesis Playground</title>
+<style>
+textarea {
+  width: 30em;
+  height: 10em;
+}
+
+</style>
+</head>
+<body>
+<h1>Speech Synthesis Playground</h1>
+
+<textarea id="input">你好世界！再见宇宙！</textarea>
+<div>
+  <button onclick="say()"">Speak</button>
+</div>
+<div>Chinese voices:
+  <ul id="voices"></ul>
+</div>
+
+<script>
+function say() {
+  const text = document.getElementById('input').value
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = 'zh-CN'
+  utterance.voice = window.voice
+  speechSynthesis.speak(utterance)
+}
+
+function getVoices() {
+  return new Promise((resolve) => {
+    const voices = speechSynthesis.getVoices()
+    if (voices.length > 0) {
+      resolve(voices)
+    } else {
+      speechSynthesis.addEventListener('voiceschanged', () => resolve(speechSynthesis.getVoices()))
+    }
+  })
+}
+
+async function getChineseVoices() {
+  return (await getVoices()).filter(v => v.lang === 'zh-CN')
+}
+
+window.addEventListener('load', async () => {
+  const voicesEl = document.getElementById('voices')
+  const voices = await getChineseVoices()
+  for (const voice of voices) {
+    const li = document.createElement('li')
+    li.innerText = `${voice.name} (${voice.voiceURI})`
+    voicesEl.appendChild(li)
+  }
+
+  if (voices.length > 0) {
+    window.voice = voices[0]
+  }
+})
+</script>
+</body>
+</html>
