@@ -1,9 +1,4 @@
 .DS_Store
 __pycache__
 
-pyenv/
 makemeahanzi/
-public/
-
-cedict.txt.gz
-cedict.sqlite3
