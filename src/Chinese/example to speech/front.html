@@ -36,7 +36,9 @@
       const result = event.results[0][0]
       const transcriptEl = root.querySelector('.transcript')
       transcriptEl.innerText = 'Transcript: ' + result.transcript
-      const transcriptColor = result.transcript === "{{example}}" ? 'green' : 'red'
+      const example = "{{example}}".replace(/[。！？]/g, '')
+      console.log(example)
+      const transcriptColor = result.transcript === example ? 'green' : 'red'
       transcriptEl.style = `color: ${transcriptColor}`
 
       localStorage.setItem('answer', result.transcript)
