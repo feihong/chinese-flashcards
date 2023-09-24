@@ -1,0 +1,49 @@
+<button onclick="say()">Speak</button> <span id="a0c2eebe-ff76-4f7a-9245-f6610e607a69"></span>
+<p>Listen to the word and write its hanzi below</p>
+<div><input autocomplete="off" onchange="localStorage.setItem('answer', this.value)"></div>
+
+<script>
+{
+  const showVoice = () => {
+    const voiceEl = document.getElementById("a0c2eebe-ff76-4f7a-9245-f6610e607a69")
+    if (voiceEl !== null) {
+      voiceEl.innerText = `using voice ${window.chineseVoice.name}`
+    }
+  }
+
+  const setChineseVoice = () => {
+    const chineseVoices = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')
+    if (chineseVoices.length === 0) {
+      return
+    }
+    const lili = chineseVoices.find(v => v.name.toLowerCase() === 'lili')
+    window.chineseVoice = lili !== undefined ? lili : chineseVoices[0]
+    showVoice()
+  }
+
+  if (window.chineseVoice !== undefined) {
+    showVoice()
+  } else {
+    const voices = speechSynthesis.getVoices()
+    if (voices.length !== 0) {
+      setChineseVoice()
+    } else {
+      // We only need to do this on Chrome
+      speechSynthesis.addEventListener('voiceschanged', () => setChineseVoice())
+    }
+  }
+
+  window.say = function() {
+    if (window.chineseVoice === undefined) {
+      console.log('No Chinese voices found')
+      return
+    }
+
+    const text = '{{Front}}'
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.voice = window.chineseVoice
+    utterance.rate = 0.5
+    speechSynthesis.speak(utterance)
+  }
+}
+</script>

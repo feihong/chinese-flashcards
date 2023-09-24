@@ -12,3 +12,9 @@ publish:
 
 serve:
 	python -m http.server
+
+build:
+	python build.py
+
+update: build
+	python update_anki.py
