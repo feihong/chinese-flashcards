@@ -18,3 +18,6 @@ build:
 
 update: build
 	python update_anki.py
+
+count:
+	python count_unique_hanzi.py
