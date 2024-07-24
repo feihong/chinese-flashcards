@@ -4,44 +4,70 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Speech Recognition Playground</title>
+<title>Speech Recognition Demo</title>
 </head>
 <body>
-<h1>Speech Recognition Playground</h1>
+<h1>Speech Recognition Demo</h1>
 
 <button id="button" onclick="start()">Start</button>
-<div>
-  <div id="status">idle</div>
-  <div id="transcript"></div>
-  <div id="confidence"></div>
+<div>Language:
+  <select id="language">
+    <option value="zh-cn">Mandarin</option>
+    <option value="zh-hk">Cantonese</option>
+    <option value="en-us">English</option>
+  </select>
 </div>
+<div>Status: <span id="status">n/a</span></div>
+<div>Transcript: <span id="transcript">n/a</span></div>
+<div>Confidence: <span id="confidence">n/a</span></div>
+<div>Events: <ol id="events"></ol></div>
 
 <script>
-const recognition = new webkitSpeechRecognition()
-recognition.lang = 'zh-CN'
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+const recognition = new SpeechRecognition()
 
 const buttonEl = document.getElementById('button')
+const langEl = document.getElementById('language')
 const statusEl = document.getElementById('status')
+const eventsEl = document.getElementById('events')
 const transcriptEl = document.getElementById('transcript')
 const confidenceEl = document.getElementById('confidence')
 
+recognition.lang = langEl.value
+
+langEl.onchange = evt => {
+  recognition.lang = evt.target.value
+}
+
+const addEvent = text => {
+  const li = document.createElement('li')
+  li.innerText = text
+  eventsEl.appendChild(li)
+}
+
+const clearEvents = () => {
+  eventsEl.textContent = ''
+}
+
 recognition.onstart = () => {
+  addEvent('onstart')
   statusEl.innerText = 'listening'
 }
 
 recognition.onend = () => {
+  addEvent('onend')
   statusEl.innerText = 'idle'
 }
 
 // Doesn't work on Safari
 recognition.onspeechend = () => {
-  console.log('onspeechend')
+  addEvent('onspeechend')
   recognition.stop()
 }
 
 // Doesn't work on Safari
 recognition.onsoundend = () => {
-  console.log('onsoundend');
+  addEvent('onsoundend')
   recognition.stop()
 }
 
@@ -55,6 +81,7 @@ function start() {
   if (buttonEl.innerText.toLowerCase() === 'start') {
     buttonEl.innerText = 'Stop'
     recognition.start()
+    clearEvents()
   } else {
     buttonEl.innerText = 'Start'
     recognition.stop()
