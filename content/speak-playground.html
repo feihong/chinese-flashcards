@@ -4,32 +4,57 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Speech Synthesis Playground</title>
+<title>Speech Synthesis Demo</title>
 <style>
 textarea {
   width: 30em;
   height: 10em;
 }
-
 </style>
 </head>
 <body>
-<h1>Speech Synthesis Playground</h1>
+<h1>Speech Synthesis Demo</h1>
 
-<textarea id="input">你好世界！再见宇宙！</textarea>
+<div>
+  Languages:
+  <select id="languages">
+    <option value="zh-cn">Mandarin</option>
+    <option value="zh-hk">Cantonese</option>
+    <option value="en-us">English</option>
+  </select>
+  Voices:
+  <select id="voices"></select>
+</div>
+<textarea id="input">你好世界！Hello World!</textarea>
 <div>
   <button onclick="say()"">Speak</button>
-</div>
-<div>Chinese voices:
-  <ul id="voices"></ul>
+  <button onclick="showAllVoices()"">Show all voices</button>
 </div>
 
 <script>
-function say() {
-  const text = document.getElementById('input').value
+const inputEl = document.getElementById('input')
+const langEl = document.getElementById('languages')
+const voicesEl = document.getElementById('voices')
+langEl.onchange = async evt => {
+  await updateVoicesSelect(langEl.value)
+}
+
+async function updateVoicesSelect(lang) {
+  voicesEl.textContent = ''
+  const voices = await getVoicesForLang(lang)
+  for (const voice of voices) {
+    const op = document.createElement('option')
+    op.textContent = voice.name
+    op.value = voice.name
+    voicesEl.appendChild(op)
+  }
+}
+
+async function say() {
+  const text = inputEl.value
   const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = 'zh-CN'
-  utterance.voice = window.voice
+  const voice = await getVoice(voicesEl.value)
+  utterance.voice = voice
   speechSynthesis.speak(utterance)
 }
 
@@ -44,22 +69,38 @@ function getVoices() {
   })
 }
 
-async function getChineseVoices() {
-  return (await getVoices()).filter(v => v.lang === 'zh-CN')
+async function getVoicesForLang(lang) {
+  return (await getVoices()).filter(v => v.lang.toLowerCase() === lang)
 }
 
-window.addEventListener('load', async () => {
-  const voicesEl = document.getElementById('voices')
-  const voices = await getChineseVoices()
+async function getVoice(name) {
+  return (await getVoices()).find(v => v.name === name)
+}
+
+// Show all available voices, grouped by primary language
+async function showAllVoices() {
+  const result = []
+  const voices = await getVoices()
+  const vm = new Map()
   for (const voice of voices) {
-    const li = document.createElement('li')
-    li.innerText = `${voice.name} (${voice.voiceURI})`
-    voicesEl.appendChild(li)
+    const [primary, _secondary] = voice.lang.split('-')
+    if (vm.has(primary)) {
+      vm.get(primary).push([voice.lang, voice.name])
+    } else {
+      vm.set(primary, [[voice.lang, voice.name]])
+    }
+  }
+  for (const entry of vm.entries()) {
+    for (const [lang, name] of entry[1]) {
+      result.push(`${lang}, ${name}`)
+    }
   }
 
-  if (voices.length > 0) {
-    window.voice = voices[0]
-  }
+  inputEl.value = result.join('\n')
+}
+
+window.addEventListener('load', () => {
+  updateVoicesSelect(langEl.value)
 })
 </script>
 </body>
