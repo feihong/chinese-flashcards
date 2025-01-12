@@ -22,8 +22,6 @@ recognition.onresult = event => {
   transcriptEl.innerText = 'Transcript: ' + result.transcript
   const example = "{{example}}".replace(/[。！？，、]/g, '')
   console.log(example)
-  const transcriptColor = result.transcript === example ? 'green' : 'red'
-  transcriptEl.style = `color: ${transcriptColor}`
 
   localStorage.setItem('answer', result.transcript)
 

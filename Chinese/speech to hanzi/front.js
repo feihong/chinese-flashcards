@@ -1,8 +1,8 @@
+const rootEl = document.getElementById("a0c2eebe-ff76-4f7a-9245-f6610e607a69")
+
 const showVoice = () => {
-  const voiceEl = document.getElementById("a0c2eebe-ff76-4f7a-9245-f6610e607a69")
-  if (voiceEl !== null) {
-    voiceEl.innerText = `using voice ${window.chineseVoice.name}`
-  }
+  const voiceEl = rootEl.querySelector('.voice')
+  voiceEl.innerText = window.chineseVoice.name
 }
 
 const setChineseVoice = () => {
@@ -27,7 +27,7 @@ if (window.chineseVoice !== undefined) {
   }
 }
 
-window.say = function() {
+rootEl.querySelector('button').onclick = () => {
   if (window.chineseVoice === undefined) {
     console.log('No Chinese voices found')
     return

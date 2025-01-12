@@ -29,7 +29,10 @@ def update_model_template(model_dir: Path):
     'name': model_name,
     'templates': dict(get_model_templates(model_dir)),
   }
-  invoke('updateModelTemplates', model=model)
-  print(f'Updated template for {model_name}')
+  result = invoke('updateModelTemplates', model=model)
+  if error := result['error']:
+    print(error)
+  else:
+    print(f'Updated template for {model_name}')
 
 update_model_template(build_dir / 'Chinese')
