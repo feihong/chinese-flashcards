@@ -16,6 +16,9 @@ serve:
 build:
 	python build.py
 
+clean:
+	rm -rf _build/*
+
 update: build
 	python update_anki.py
 
