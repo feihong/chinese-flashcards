@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import secrets
 
-
+version = '2.0.0'
 here = Path(__file__).parent
 source_dir = here / 'Chinese'
 output_dir = here / '_build'
@@ -38,6 +38,8 @@ class Compiler:
 
   def get_lines(self):
     script_files = []
+
+    yield f'<!-- Version {version} -->\n\n'
 
     with self.input_file.open() as fp:
       for line in fp:
