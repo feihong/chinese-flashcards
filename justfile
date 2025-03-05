@@ -24,3 +24,6 @@ update: build
 
 count:
 	python count_unique_hanzi.py
+
+sloppy:
+  python list_sloppy_cards.py

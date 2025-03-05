@@ -1,11 +1,7 @@
 """
-Count the number of unique hanzi in Chinese cards
+Count the number of unique hanzi in Chinese notes
 """
-from pathlib import Path
 import requests
-
-here = Path(__file__).parent
-build_dir = here / '_build'
 
 def invoke(action, **params):
   data = {'action': action, 'version': 6}
