@@ -27,3 +27,6 @@ count:
 
 sloppy:
   python list_sloppy_cards.py
+
+story:
+	python generate_story_prompt.py
