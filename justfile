@@ -30,3 +30,6 @@ sloppy:
 
 story:
 	python generate_story_prompt.py
+
+sentence:
+  python generate_sentences_prompt.py
