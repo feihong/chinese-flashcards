@@ -36,6 +36,6 @@ sorted_reviews = list((k, v['time']) for k, v in reviews.items())
 sorted_reviews.sort(key=lambda t: t[1])
 
 for batch in itertools.batched(sorted_reviews, n=10):
-  print(f'{batch[0][1]} ms:', ','.join(t[0] for t in batch))
+  print(f'({batch[0][1]} ms)', 'cid:' + ','.join(t[0] for t in batch))
 
 print(f'\nThere are {len(reviews)} sloppily-reviewed cards')
