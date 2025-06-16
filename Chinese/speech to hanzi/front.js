@@ -1,41 +1,76 @@
 const rootEl = document.getElementById("a0c2eebe-ff76-4f7a-9245-f6610e607a69")
+const voiceNameKey = 'chinese-voice'
+const voicesSelect = rootEl.querySelector('select')
 
-const showVoice = () => {
-  const voiceEl = rootEl.querySelector('.voice')
-  voiceEl.innerText = window.chineseVoice.name
+/*
+
+1. Get all Chinese voices
+2. Populate the select with voices
+3. Set the value of the select from `localStorage.getItem(voiceNameKey)`
+4. When Speak is pressed, use the voice from `localStorage.getItem(voiceNameKey)`
+5. If select is changed, run `localStorage.setItem(voiceNameKey, <selected voice>)`
+
+*/
+
+// Return all voices
+const getVoices_ = () => {
+  return new Promise((resolve) => {
+    // FF and Safari must call getVoices() directly, but WebKit browsers must listen for voiceschanged event
+    const voices = speechSynthesis.getVoices()
+    if (voices.length > 0) {
+      resolve(voices)
+    } else {
+      console.log('Use voiceschanged event to get voices')
+      speechSynthesis.addEventListener(
+        'voiceschanged',
+        () => resolve(speechSynthesis.getVoices()),
+        {once: true},
+      )
+    }
+  })
 }
 
-const setChineseVoice = () => {
-  const chineseVoices = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')
-  if (chineseVoices.length === 0) {
-    return
-  }
-  const lili = chineseVoices.find(v => v.name.toLowerCase() === 'lili')
-  window.chineseVoice = lili !== undefined ? lili : chineseVoices[0]
-  showVoice()
+// Return only mainland Chinese voices
+const getVoices = async () => {
+  return (await getVoices_()).filter(v => v.lang === 'zh-CN')
 }
 
-if (window.chineseVoice !== undefined) {
-  showVoice()
-} else {
-  const voices = speechSynthesis.getVoices()
-  if (voices.length !== 0) {
-    setChineseVoice()
-  } else {
-    // We only need to do this on Chrome
-    speechSynthesis.addEventListener('voiceschanged', () => setChineseVoice())
-  }
+// Returns voice with the given name, or, if no voice matches, return the first one
+const getVoice = async (voiceName) => {
+  const voices = await getVoices()
+  const matches = voices.filter(v => v.name === voiceName)
+  return matches.length == 0 ? voices[0] : matches[0]
 }
 
-rootEl.querySelector('button').onclick = () => {
-  if (window.chineseVoice === undefined) {
-    console.log('No Chinese voices found')
-    return
-  }
+voicesSelect.onchange = () => {
+  localStorage.setItem(voiceNameKey, voicesSelect.value)
+}
+
+rootEl.querySelector('button').onclick = async () => {
+  const voiceName = localStorage.getItem(voiceNameKey)
+  const voice = await getVoice(voiceName)
+  console.log('Using', voice)
 
   const text = '{{Front}}'
   const utterance = new SpeechSynthesisUtterance(text)
-  utterance.voice = window.chineseVoice
+  utterance.voice = voice
   utterance.rate = 0.5
   speechSynthesis.speak(utterance)
 }
+
+const main = async () => {
+  const voices = await getVoices()
+  for (const voice of voices) {
+    const op = document.createElement('option')
+    op.textContent = voice.name
+    op.value = voice.name
+    voicesSelect.appendChild(op)
+  }
+
+  const currentVoice = localStorage.getItem(voiceNameKey)
+  if (currentVoice !== null) {
+    voicesSelect.value = currentVoice
+  }
+}
+
+main()
