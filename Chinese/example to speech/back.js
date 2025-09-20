@@ -1,5 +1,6 @@
 const answer = localStorage.getItem('answer') || ''
-const answerEl = document.getElementById('db7bbb8f-1709-4f9e-9c84-11d267a4b556')
+const divEl = document.getElementById('a0c2eebe-ff76-4f7a-9245-f6610e607a69')
+const answerEl = divEl.querySelector('.your-answer')
 
 // Replace all 她 and 它 with 他 and remove punctuation
 const replaceTa = s => s.replace(/她|它/g, '他')

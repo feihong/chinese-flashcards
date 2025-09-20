@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import secrets
 
-version = '2.0.0'
+version = '2.1.0'
 here = Path(__file__).parent
 source_dir = here / 'Chinese'
 output_dir = here / '_build'
@@ -50,7 +50,7 @@ class Compiler:
           yield line
 
       if len(script_files) > 0:
-        inline_script = '\n\n'.join(p.read_text() for p in script_files)
+        inline_script = '\n\n'.join(f'// {p}\n{p.read_text()}'  for p in script_files)
         yield '<script>\n{\n\n' + inline_script + '\n\n}\n</script>'
 
 
