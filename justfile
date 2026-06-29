@@ -26,10 +26,13 @@ count:
 	python count_unique_hanzi.py
 
 sloppy:
-  python list_sloppy_cards.py
+	python list_sloppy_cards.py
 
 story:
 	python generate_story_prompt.py
 
 sentence:
-  python generate_sentences_prompt.py
+	python generate_sentences_prompt.py
+
+examples:
+	python check_test_examples.py
