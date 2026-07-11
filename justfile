@@ -36,3 +36,6 @@ sentence:
 
 examples:
 	python check_test_examples.py
+
+report:
+	uv run --env-file .env generate_report.py
