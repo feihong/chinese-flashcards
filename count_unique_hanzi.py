@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.13"
+# dependencies = ["requests"]
+# ///
 """
 Count the number of unique hanzi in Chinese notes
 """
