@@ -31,11 +31,21 @@ from htpy import (
     p,
     ol,
     li,
-    a as anchor,
+    table,
+    tr,
+    td,
 )
 
 
 output_file = Path(os.environ["OUTPUT_DIR"]) / "index.html"
+
+
+STYLE = """
+body { margin: 1em; }
+ul { padding-left: 1em; }
+table { border-collapse: collapse; }
+th, td { border: 1px solid #777; padding: 1em; }
+"""
 
 
 class SloppyReviewResult(NamedTuple):
@@ -98,7 +108,8 @@ def get_sloppy_reviews() -> SloppyReviewResult:
 
 def get_new_notes() -> list:
     note_ids = invoke(
-        "findNotes", query="note:Chinese added:30 OR note:Cloze added:30"
+        "findNotes",
+        query="deck:Main note:Chinese added:30 OR deck:Main note:Cloze added:30",
     )["result"]
     print(
         f"Found {len(note_ids)} new Chinese or Cloze notes added within the past 30 days"
@@ -113,12 +124,7 @@ def write_to_file(content):
             meta(charset="utf-8"),
             meta(name="viewport", content="width=device-width,initial-scale=1"),
             title[title_text],
-            style[
-                """
-                body { margin: 1em; }
-                ul { padding-left: 1em; }
-            """
-            ],
+            style[STYLE],
         ],
         body[
             h1[title_text],
@@ -131,12 +137,15 @@ def write_to_file(content):
     print(f"Generated report to {output_file}")
 
 
-def new_note_to_str(note):
+def new_note_to_row(num, note):
+    numtd = td(style="text-align: right")[str(num)]
+
     match note["modelName"]:
         case "Cloze":
-            return note["fields"]["Text"]["value"]
+            return tr[numtd, td(colspan="4")[note["fields"]["Text"]["value"]]]
         case "Chinese":
-            return note["fields"]["Front"]["value"]
+            field_names = ("Front", "pinyin", "gloss", "example")
+            return tr[numtd, (td[note["fields"][n]["value"]] for n in field_names)]
 
 
 def generate_report(unique_chars, sloppy_reviews, new_notes):
@@ -159,7 +168,7 @@ def generate_report(unique_chars, sloppy_reviews, new_notes):
 
         yield h2[f"Chinese cards added within the past 30 days ({len(new_notes)})"]
 
-        yield ol[(li[new_note_to_str(n)] for n in new_notes)]
+        yield table[(new_note_to_row(i, n) for i, n in enumerate(new_notes, 1))]
 
     write_to_file(content())
 
