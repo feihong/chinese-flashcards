@@ -1,29 +1,34 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["requests", "htpy"]
+# dependencies = ["requests", "htpy", "html2text"]
 # ///
 """
 Generate a report summarizing the current state of Chinese flashcards, including:
-- List unique hanzi in the cards
+- List unique hanzi that appear on the front of notes
 - List sloppily-reviewed cards in the past 7 days
-- List new cards added since a specific day in the past
-- All the cards currently in the Test deck
+- List new notes added since a specific day in the past
+- List all notes currently in the Test deck
 """
 
 import os
 from pathlib import Path
+from collections.abc import Iterable
+from typing import NamedTuple
 
 import requests
+import html2text
 from htpy import (
     html,
     head,
     meta,
     title,
+    style,
     body,
     h1,
     h2,
     details,
     summary,
+    p,
     ul,
     li,
     a as anchor,
@@ -33,10 +38,16 @@ from htpy import (
 output_file = Path(os.environ["OUTPUT_DIR"]) / "index.html"
 
 
+class SloppyReviewResult(NamedTuple):
+    shortest_duration: int
+    cards: list[dict]
+
+
 def main():
     notes = get_chinese_notes()
     unique_chars = get_unique_chars(notes)
-    generate_report(unique_chars)
+    sloppy_reviews = get_sloppy_reviews()
+    generate_report(unique_chars, sloppy_reviews)
 
 
 def invoke(action, **params):
@@ -53,7 +64,7 @@ def get_chinese_notes():
     return invoke("notesInfo", notes=note_ids)["result"]
 
 
-def get_unique_chars(notes):
+def get_unique_chars(notes) -> Iterable[str]:
     def gen():
         for note in notes:
             for c in note["fields"]["Front"]["value"]:
@@ -63,6 +74,29 @@ def get_unique_chars(notes):
     return sorted(set(gen()))
 
 
+def get_sloppy_reviews() -> SloppyReviewResult:
+    card_ids = invoke("findCards", query="rated:7")["result"]
+    print(f"Found {len(card_ids)} cards studied within the past 7 days")
+
+    reviews = invoke("getReviewsOfCards", cards=card_ids)["result"]
+    # print(f'Found {len(reviews)} reviews')
+
+    shortest_duration = 1_000_000
+    for key in list(reviews.keys()):
+        review = reviews[key][-1]  # only look at latest review
+        shortest_duration = min(shortest_duration, review["time"])
+
+        if review["time"] > 500:
+            # ignore if review duration was more than 0.4 seconds
+            del reviews[key]
+        else:
+            reviews[key] = review
+
+    card_ids = [int(s) for s in reviews.keys()]
+    cards = invoke("cardsInfo", cards=card_ids)["result"]
+    return SloppyReviewResult(shortest_duration=shortest_duration, cards=cards)
+
+
 def write_to_file(content):
     title_text = "Chinese Flashcards Report"
     doc = html[
@@ -70,6 +104,12 @@ def write_to_file(content):
             meta(charset="utf-8"),
             meta(name="viewport", content="width=device-width,initial-scale=1"),
             title[title_text],
+            style[
+                """
+                body { margin: 1em; }
+                ul { padding-left: 1em; }
+            """
+            ],
         ],
         body[
             h1[title_text],
@@ -82,12 +122,23 @@ def write_to_file(content):
     print(f"Generated report to {output_file}")
 
 
-def generate_report(unique_chars):
+def generate_report(unique_chars, sloppy_reviews):
     def content():
         yield details[
             summary[f"Unique characters ({len(unique_chars)})"],
             ", ".join(unique_chars),
         ]
+
+        yield h2[f"Sloppy reviews within the past 7 days ({len(sloppy_reviews.cards)})"]
+
+        yield p[f"Shortest review: {sloppy_reviews.shortest_duration} ms"]
+
+        yield details[
+            summary["Anki query"],
+            "cid:" + ",".join(str(c["cardId"]) for c in sloppy_reviews.cards),
+        ]
+
+        yield ul[(li[html2text.html2text(c["question"])] for c in sloppy_reviews.cards)]
 
     write_to_file(content())
 
