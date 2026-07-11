@@ -29,7 +29,7 @@ from htpy import (
     details,
     summary,
     p,
-    ul,
+    ol,
     li,
     a as anchor,
 )
@@ -44,10 +44,11 @@ class SloppyReviewResult(NamedTuple):
 
 
 def main():
-    notes = get_chinese_notes()
-    unique_chars = get_unique_chars(notes)
+    unique_chars = get_unique_chars()
     sloppy_reviews = get_sloppy_reviews()
-    generate_report(unique_chars, sloppy_reviews)
+    new_notes = get_new_notes()
+
+    generate_report(unique_chars, sloppy_reviews, new_notes)
 
 
 def invoke(action, **params):
@@ -58,13 +59,11 @@ def invoke(action, **params):
     return r.json()
 
 
-def get_chinese_notes():
+def get_unique_chars() -> Iterable[str]:
     note_ids = invoke("findNotes", query="note:Chinese")["result"]
     print(f"Found {len(note_ids)} Chinese notes")
-    return invoke("notesInfo", notes=note_ids)["result"]
+    notes = invoke("notesInfo", notes=note_ids)["result"]
 
-
-def get_unique_chars(notes) -> Iterable[str]:
     def gen():
         for note in notes:
             for c in note["fields"]["Front"]["value"]:
@@ -97,6 +96,16 @@ def get_sloppy_reviews() -> SloppyReviewResult:
     return SloppyReviewResult(shortest_duration=shortest_duration, cards=cards)
 
 
+def get_new_notes() -> list:
+    note_ids = invoke(
+        "findNotes", query="note:Chinese added:30 OR note:Cloze added:30"
+    )["result"]
+    print(
+        f"Found {len(note_ids)} new Chinese or Cloze notes added within the past 30 days"
+    )
+    return invoke("notesInfo", notes=note_ids)["result"]
+
+
 def write_to_file(content):
     title_text = "Chinese Flashcards Report"
     doc = html[
@@ -122,7 +131,15 @@ def write_to_file(content):
     print(f"Generated report to {output_file}")
 
 
-def generate_report(unique_chars, sloppy_reviews):
+def new_note_to_str(note):
+    match note["modelName"]:
+        case "Cloze":
+            return note["fields"]["Text"]["value"]
+        case "Chinese":
+            return note["fields"]["Front"]["value"]
+
+
+def generate_report(unique_chars, sloppy_reviews, new_notes):
     def content():
         yield details[
             summary[f"Unique characters ({len(unique_chars)})"],
@@ -138,7 +155,11 @@ def generate_report(unique_chars, sloppy_reviews):
             "cid:" + ",".join(str(c["cardId"]) for c in sloppy_reviews.cards),
         ]
 
-        yield ul[(li[html2text.html2text(c["question"])] for c in sloppy_reviews.cards)]
+        yield ol[(li[html2text.html2text(c["question"])] for c in sloppy_reviews.cards)]
+
+        yield h2[f"Chinese cards added within the past 30 days ({len(new_notes)})"]
+
+        yield ol[(li[new_note_to_str(n)] for n in new_notes)]
 
     write_to_file(content())
 
