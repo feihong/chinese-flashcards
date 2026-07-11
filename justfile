@@ -1,3 +1,5 @@
+set dotenv-load := true
+
 help:
 	just --list
 
@@ -39,3 +41,6 @@ examples:
 
 report:
 	uv run --env-file .env generate_report.py
+
+deploy: report
+    rsync -avz index.html $SERVER_DIR/index.html

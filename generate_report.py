@@ -11,7 +11,6 @@ Generate a report summarizing the current state of Chinese flashcards, including
 - TODO: Percentage of 'Good' reviews for each day in the past 7 days
 """
 
-import os
 from pathlib import Path
 from collections.abc import Iterable
 from typing import NamedTuple
@@ -39,12 +38,11 @@ from htpy import (
 )
 
 
-output_file = Path(os.environ["OUTPUT_DIR"]) / "index.html"
+output_file = Path(__file__).parent / "index.html"
 
 
 STYLE = """
 body { margin: 1em; }
-ul { padding-left: 1em; }
 table { border-collapse: collapse; }
 th, td { border: 1px solid #777; padding: 1em; }
 """
