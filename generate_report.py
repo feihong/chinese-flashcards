@@ -8,12 +8,14 @@ Generate a report summarizing the current state of Chinese flashcards, including
 - List sloppily-reviewed cards in the past 7 days
 - List new notes added since a specific day in the past
 - List all notes currently in the Test deck
+- TODO: Percentage of 'Good' reviews for each day in the past 7 days
 """
 
 import os
 from pathlib import Path
 from collections.abc import Iterable
 from typing import NamedTuple
+from datetime import datetime
 
 import requests
 import html2text
@@ -57,8 +59,9 @@ def main():
     unique_chars = get_unique_chars()
     sloppy_reviews = get_sloppy_reviews()
     new_notes = get_new_notes()
+    test_notes = get_test_notes()
 
-    generate_report(unique_chars, sloppy_reviews, new_notes)
+    generate_report(unique_chars, sloppy_reviews, new_notes, test_notes)
 
 
 def invoke(action, **params):
@@ -106,7 +109,7 @@ def get_sloppy_reviews() -> SloppyReviewResult:
     return SloppyReviewResult(shortest_duration=shortest_duration, cards=cards)
 
 
-def get_new_notes() -> list:
+def get_new_notes() -> list[dict]:
     note_ids = invoke(
         "findNotes",
         query="deck:Main note:Chinese added:30 OR deck:Main note:Cloze added:30",
@@ -114,6 +117,15 @@ def get_new_notes() -> list:
     print(
         f"Found {len(note_ids)} new Chinese or Cloze notes added within the past 30 days"
     )
+    return invoke("notesInfo", notes=note_ids)["result"]
+
+
+def get_test_notes() -> list[dict]:
+    note_ids = invoke(
+        "findNotes",
+        query="deck:Test",
+    )["result"]
+    print(f"Found {len(note_ids)} notes in Test deck")
     return invoke("notesInfo", notes=note_ids)["result"]
 
 
@@ -128,6 +140,7 @@ def write_to_file(content):
         ],
         body[
             h1[title_text],
+            p[f"Generated {datetime.now().strftime('%A, %B %d, %Y at %I:%M %p')}"],
             *content,
         ],
     ]
@@ -137,18 +150,21 @@ def write_to_file(content):
     print(f"Generated report to {output_file}")
 
 
-def new_note_to_row(num, note):
-    numtd = td(style="text-align: right")[str(num)]
+def notes_to_table(notes):
+    def row(num, note):
+        numtd = td(style="text-align: right")[str(num)]
 
-    match note["modelName"]:
-        case "Cloze":
-            return tr[numtd, td(colspan="4")[note["fields"]["Text"]["value"]]]
-        case "Chinese":
-            field_names = ("Front", "pinyin", "gloss", "example")
-            return tr[numtd, (td[note["fields"][n]["value"]] for n in field_names)]
+        match note["modelName"]:
+            case "Cloze":
+                return tr[numtd, td(colspan="4")[note["fields"]["Text"]["value"]]]
+            case "Chinese":
+                field_names = ("Front", "pinyin", "gloss", "example")
+                return tr[numtd, (td[note["fields"][n]["value"]] for n in field_names)]
+
+    return table[(row(i, n) for i, n in enumerate(notes, 1))]
 
 
-def generate_report(unique_chars, sloppy_reviews, new_notes):
+def generate_report(unique_chars, sloppy_reviews, new_notes, test_notes):
     def content():
         yield details[
             summary[f"Unique characters ({len(unique_chars)})"],
@@ -168,7 +184,11 @@ def generate_report(unique_chars, sloppy_reviews, new_notes):
 
         yield h2[f"Chinese cards added within the past 30 days ({len(new_notes)})"]
 
-        yield table[(new_note_to_row(i, n) for i, n in enumerate(new_notes, 1))]
+        yield notes_to_table(new_notes)
+
+        yield h2[f"Cards in Test deck ({(len(test_notes))})"]
+
+        yield notes_to_table(test_notes)
 
     write_to_file(content())
 
