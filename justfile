@@ -24,12 +24,6 @@ clean:
 update: build
 	python update_anki.py
 
-count:
-	uv run count_unique_hanzi.py
-
-sloppy:
-	python list_sloppy_cards.py
-
 story:
 	python generate_story_prompt.py
 
