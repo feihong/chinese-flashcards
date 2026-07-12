@@ -42,5 +42,5 @@ examples:
 report:
 	uv run --env-file .env generate_report.py
 
-deploy: report
+publish: report
     rsync -avz index.html $SERVER_DIR/index.html

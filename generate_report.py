@@ -4,6 +4,7 @@
 # ///
 """
 Generate a report summarizing the current state of Chinese flashcards, including:
+- State the total number of Chinese notes
 - List unique hanzi that appear on the front of notes
 - List sloppily-reviewed cards in the past 7 days
 - List new notes added since a specific day in the past
@@ -35,6 +36,7 @@ from htpy import (
     table,
     tr,
     td,
+    textarea,
 )
 
 
@@ -46,6 +48,11 @@ body { margin: 1em; }
 table { border-collapse: collapse; }
 th, td { border: 1px solid #777; padding: 1em; }
 """
+
+
+class UniqueCharsResult(NamedTuple):
+    notes_count: int
+    unique_hanzi: Iterable[str]
 
 
 class SloppyReviewResult(NamedTuple):
@@ -81,7 +88,7 @@ def get_unique_chars() -> Iterable[str]:
                 if ord(c) > 255:
                     yield c
 
-    return sorted(set(gen()))
+    return UniqueCharsResult(notes_count=len(note_ids), unique_hanzi=sorted(set(gen())))
 
 
 def get_sloppy_reviews() -> SloppyReviewResult:
@@ -164,9 +171,11 @@ def notes_to_table(notes):
 
 def generate_report(unique_chars, sloppy_reviews, new_notes, test_notes):
     def content():
+        yield p[f"Number of Chinese notes: {unique_chars.notes_count}"]
+
         yield details[
-            summary[f"Unique characters ({len(unique_chars)})"],
-            ", ".join(unique_chars),
+            summary[f"Unique characters ({len(unique_chars.unique_hanzi)})"],
+            ", ".join(unique_chars.unique_hanzi),
         ]
 
         yield h2[f"Sloppy reviews within the past 7 days ({len(sloppy_reviews.cards)})"]
@@ -175,7 +184,9 @@ def generate_report(unique_chars, sloppy_reviews, new_notes, test_notes):
 
         yield details[
             summary["Anki query"],
-            "cid:" + ",".join(str(c["cardId"]) for c in sloppy_reviews.cards),
+            textarea(readonly=True)[
+                "cid:" + ",".join(str(c["cardId"]) for c in sloppy_reviews.cards)
+            ],
         ]
 
         yield ol[(li[html2text.html2text(c["question"])] for c in sloppy_reviews.cards)]
