@@ -36,5 +36,10 @@ examples:
 report:
 	uv run --env-file .env generate_report.py
 
-publish: report
-    rsync -avz index.html $SERVER_DIR/index.html
+publish_static:
+    rsync -avz quiz-prompt.html $SERVER_DIR
+
+publish_report: report
+    rsync -avz index.html $SERVER_DIR
+
+

@@ -98,19 +98,19 @@ def get_sloppy_reviews() -> SloppyReviewResult:
     reviews = invoke("getReviewsOfCards", cards=card_ids)["result"]
     # print(f'Found {len(reviews)} reviews')
 
+    cr_map = {} # dict mapping card_id to review time
     shortest_duration = 1_000_000
-    for key in list(reviews.keys()):
-        review = reviews[key][-1]  # only look at latest review
-        shortest_duration = min(shortest_duration, review["time"])
+    for card_id, reviews in reviews.items():
+        review = reviews[-1]    # only look at latest review
+        shortest_duration = min(shortest_duration, review['time'])
 
-        if review["time"] > 500:
-            # ignore if review duration was more than 0.4 seconds
-            del reviews[key]
-        else:
-            reviews[key] = review
+        if review['time'] < 500:
+            cr_map[int(card_id)] = review['id']
 
-    card_ids = [int(s) for s in reviews.keys()]
+    card_ids = list(cr_map.keys())
     cards = invoke("cardsInfo", cards=card_ids)["result"]
+    # Sort by review time, most recent on the top
+    cards.sort(key=lambda c: cr_map[c['cardId']], reverse=True)
     return SloppyReviewResult(shortest_duration=shortest_duration, cards=cards)
 
 
