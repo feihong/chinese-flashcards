@@ -33,6 +33,9 @@ sentence:
 examples:
 	python check_test_examples.py
 
+explore:
+    uv run anki_connect_explorer.py
+
 report:
 	uv run --env-file .env generate_report.py
 

@@ -9,7 +9,7 @@ Generate a report summarizing the current state of Chinese flashcards, including
 - List sloppily-reviewed cards in the past 7 days
 - List new notes added since a specific day in the past
 - List all notes currently in the Test deck
-- TODO: Percentage of 'Good' reviews for each day in the past 7 days
+- TODO: Correctness percentage of mature cards
 """
 
 from pathlib import Path
