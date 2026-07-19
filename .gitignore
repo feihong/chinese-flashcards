@@ -4,7 +4,7 @@ __pycache__
 
 makemeahanzi/
 _build/
-*.html
+/*.html
 *.json
 
 secrets.py
