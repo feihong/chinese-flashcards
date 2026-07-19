@@ -36,7 +36,7 @@ from htpy import (
     table,
     tr,
     td,
-    textarea,
+    input as input_,
 )
 
 
@@ -62,7 +62,8 @@ class SloppyReviewResult(NamedTuple):
 
 def main():
     unique_chars = get_unique_chars()
-    sloppy_reviews = get_sloppy_reviews()
+    reviews = get_reviews()
+    sloppy_reviews = get_sloppy_reviews(reviews)
     new_notes = get_new_notes()
     test_notes = get_test_notes()
 
@@ -91,26 +92,29 @@ def get_unique_chars() -> Iterable[str]:
     return UniqueCharsResult(notes_count=len(note_ids), unique_hanzi=sorted(set(gen())))
 
 
-def get_sloppy_reviews() -> SloppyReviewResult:
+def get_reviews() -> dict[dict]:
     card_ids = invoke("findCards", query="rated:7")["result"]
     print(f"Found {len(card_ids)} cards studied within the past 7 days")
 
     reviews = invoke("getReviewsOfCards", cards=card_ids)["result"]
     # print(f'Found {len(reviews)} reviews')
+    return reviews
 
-    cr_map = {} # dict mapping card_id to review time
+
+def get_sloppy_reviews(reviews) -> SloppyReviewResult:
+    cr_map = {}  # dict mapping card_id to review time
     shortest_duration = 1_000_000
     for card_id, reviews in reviews.items():
-        review = reviews[-1]    # only look at latest review
-        shortest_duration = min(shortest_duration, review['time'])
+        review = reviews[-1]  # only look at latest review
+        shortest_duration = min(shortest_duration, review["time"])
 
-        if review['time'] < 500:
-            cr_map[int(card_id)] = review['id']
+        if review["time"] < 500:
+            cr_map[int(card_id)] = review["id"]
 
     card_ids = list(cr_map.keys())
     cards = invoke("cardsInfo", cards=card_ids)["result"]
     # Sort by review time, most recent on the top
-    cards.sort(key=lambda c: cr_map[c['cardId']], reverse=True)
+    cards.sort(key=lambda c: cr_map[c["cardId"]], reverse=True)
     return SloppyReviewResult(shortest_duration=shortest_duration, cards=cards)
 
 
@@ -184,12 +188,19 @@ def generate_report(unique_chars, sloppy_reviews, new_notes, test_notes):
 
         yield details[
             summary["Anki query"],
-            textarea(readonly=True)[
-                "cid:" + ",".join(str(c["cardId"]) for c in sloppy_reviews.cards)
-            ],
+            input_(
+                readonly=True,
+                size=40,
+                value="cid:" + ",".join(str(c["cardId"]) for c in sloppy_reviews.cards),
+            ),
         ]
 
-        yield ol[(li[html2text.html2text(c["question"])] for c in sloppy_reviews.cards)]
+        yield ol[
+            (
+                li[f"{c['cardId']}: {html2text.html2text(c['question'])}"]
+                for c in sloppy_reviews.cards
+            )
+        ]
 
         yield h2[f"Chinese cards added within the past 30 days ({len(new_notes)})"]
 
