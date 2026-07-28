@@ -13,9 +13,10 @@ Generate a report summarizing the current state of Chinese flashcards, including
 """
 
 from pathlib import Path
+from collections import defaultdict
 from collections.abc import Iterable
 from typing import NamedTuple
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 import requests
 import html2text
@@ -32,6 +33,7 @@ from htpy import (
     summary,
     p,
     ol,
+    ul,
     li,
     table,
     tr,
@@ -64,10 +66,13 @@ def main():
     unique_chars = get_unique_chars()
     reviews = get_reviews()
     sloppy_reviews = get_sloppy_reviews(reviews)
+    mature_correctness = get_mature_correctness(reviews)
     new_notes = get_new_notes()
     test_notes = get_test_notes()
 
-    generate_report(unique_chars, sloppy_reviews, new_notes, test_notes)
+    generate_report(
+        unique_chars, sloppy_reviews, mature_correctness, new_notes, test_notes
+    )
 
 
 def invoke(action, **params):
@@ -116,6 +121,42 @@ def get_sloppy_reviews(reviews) -> SloppyReviewResult:
     # Sort by review time, most recent on the top
     cards.sort(key=lambda c: cr_map[c["cardId"]], reverse=True)
     return SloppyReviewResult(shortest_duration=shortest_duration, cards=cards)
+
+
+def get_mature_card_items(card_map, cards_map) -> Iterable[(str, bool)]:
+    for card_id, correct in card_map.items():
+        card = cards_map[card_id]
+        try:
+            front = card["fields"]["Front"]["value"]
+        except:
+            # Cloze cards don't have Front field, but we don't care about them
+            continue
+        question = html2text.html2text(card["question"])
+        yield f"{front} | {question}", correct
+
+
+def get_mature_correctness(reviews_map):
+    cut_off = date.today() - timedelta(days=7)
+    date_map = defaultdict(dict)
+    card_ids = set()
+
+    for card_id, reviews in reviews_map.items():
+        for review in reviews:
+            date_ = (datetime.fromtimestamp(review["id"] / 1000)).date()
+            if review["lastIvl"] >= 21 and date_ >= cut_off:
+                card_id = int(card_id)
+                card_ids.add(card_id)
+                date_map[date_][card_id] = review["lastIvl"] < review["ivl"]
+
+    cards = invoke("cardsInfo", cards=list(card_ids))["result"]
+    cards_map = {c["cardId"]: c for c in cards}
+
+    def gen():
+        date_lst = sorted(date_map.items(), key=lambda p: p[0])
+        for date, card_map in date_lst:
+            yield date, list(get_mature_card_items(card_map, cards_map))
+
+    return gen()
 
 
 def get_new_notes() -> list[dict]:
@@ -173,7 +214,19 @@ def notes_to_table(notes):
     return table[(row(i, n) for i, n in enumerate(notes, 1))]
 
 
-def generate_report(unique_chars, sloppy_reviews, new_notes, test_notes):
+def mature_correctness_detail(date, items):
+    correct = sum(item[1] for item in items)
+    total = len(items)
+
+    return details[
+        summary[f"{date.isoformat()} ({correct / total * 100:0.0f})%"],
+        ul[(li[f"{label} {'✅' if correct else '❌'}"] for label, correct in items)],
+    ]
+
+
+def generate_report(
+    unique_chars, sloppy_reviews, mature_correctness, new_notes, test_notes
+):
     def content():
         yield p[f"Number of Chinese notes: {unique_chars.notes_count}"]
 
@@ -200,6 +253,12 @@ def generate_report(unique_chars, sloppy_reviews, new_notes, test_notes):
                 li[f"{c['cardId']}: {html2text.html2text(c['question'])}"]
                 for c in sloppy_reviews.cards
             )
+        ]
+
+        yield h2["Correctness rate of mature cards"]
+
+        yield [
+            mature_correctness_detail(date, items) for date, items in mature_correctness
         ]
 
         yield h2[f"Chinese cards added within the past 30 days ({len(new_notes)})"]
