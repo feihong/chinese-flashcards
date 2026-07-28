@@ -162,10 +162,10 @@ def get_mature_correctness(reviews_map):
 def get_new_notes() -> list[dict]:
     note_ids = invoke(
         "findNotes",
-        query="deck:Main note:Chinese added:30 OR deck:Main note:Cloze added:30",
+        query="deck:Home added:30",
     )["result"]
     print(
-        f"Found {len(note_ids)} new Chinese or Cloze notes added within the past 30 days"
+        f"Found {len(note_ids)} new notes added within the past 30 days"
     )
     return invoke("notesInfo", notes=note_ids)["result"]
 
@@ -205,8 +205,10 @@ def notes_to_table(notes):
         numtd = td(style="text-align: right")[str(num)]
 
         match note["modelName"]:
-            case "Cloze":
-                return tr[numtd, td(colspan="4")[note["fields"]["Text"]["value"]]]
+            case "Chinese Simple":
+                front = note["fields"]["Front"]["value"]
+                back = note["fields"]["Back"]["value"]
+                return tr[numtd, td[front], td(colspan="3")[back]]
             case "Chinese":
                 field_names = ("Front", "pinyin", "gloss", "example")
                 return tr[numtd, (td[note["fields"][n]["value"]] for n in field_names)]
@@ -261,7 +263,7 @@ def generate_report(
             mature_correctness_detail(date, items) for date, items in mature_correctness
         ]
 
-        yield h2[f"Chinese cards added within the past 30 days ({len(new_notes)})"]
+        yield h2[f"Cards added within the past 30 days ({len(new_notes)})"]
 
         yield notes_to_table(new_notes)
 
