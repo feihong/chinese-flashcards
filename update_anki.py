@@ -47,3 +47,4 @@ def update_model_template(model_dir: Path):
 
 update_model_template(build_dir / "Chinese")
 update_model_template(build_dir / "Chinese Simple")
+update_model_template(build_dir / "Chinese Example")

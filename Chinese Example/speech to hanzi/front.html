@@ -1,0 +1,31 @@
+<div id="bfeb55cf-84d2-43c9-ae1e-966080ca5d61" data-word="{{Front}}">
+  <div>倾听这个例子并把它写出来</div>
+  <p>
+    <button>说出来</button> &nbsp;&nbsp;&nbsp; 使用语音包<select></select>
+  </p>
+  <div>
+    <input autocomplete="off" size="40" onchange="localStorage.setItem('answer', this.value)">
+  </div>
+</div>
+
+<script>
+{
+  const rootEl = document.getElementById("bfeb55cf-84d2-43c9-ae1e-966080ca5d61")
+  const inputEl = rootEl.querySelector('input')
+  const text = rootEl.dataset.word
+
+  if (text.length > 15) {
+    const textArr = Array.from(text)
+    let removed = 0
+    while (removed < 10) {
+      const i = Math.floor(Math.random() * textArr.length)
+      // Don't remove punctuation characters
+      if (textArr[i].match(/[。！？,、]/)) continue
+      textArr.splice(i, 1)
+      removed++
+    }
+    inputEl.value = textArr.join('')
+  }
+}
+</script>
+<script src="../../flashcard-lib/speech.js"></script>
