@@ -16,13 +16,13 @@ serve:
 	python -m http.server
 
 build:
-	python build.py
+	uv run --env-file .env build.py
 
 clean:
 	rm -rf _build/*
 
 update: build
-	python update_anki.py
+	uv run update_anki.py
 
 story:
 	python generate_story_prompt.py

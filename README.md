@@ -26,6 +26,13 @@ Add pinyin input method
 - Chinese, Simplified > Pinyin - Simplified
 - Click `Add`
 
+## Sample `.env` file
+
+```
+SERVER_DIR=yourdomain.com:/home/me/apps/chinese-flashcards
+SERVER=yourdomain.com
+```
+
 ## Links
 
 - [hanzi-flashcards](https://github.com/feihong/hanzi-flashcards)

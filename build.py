@@ -2,10 +2,9 @@
 Go through all .html files (except index.html) and merge their linked .js files into a single inline script tag
 """
 
-from pathlib import Path
+import os
 import re
-import secrets
-
+from pathlib import Path
 
 version = "2.2.0"
 here = Path(__file__).parent
@@ -27,7 +26,7 @@ def main():
 
     # Replace server domain in handwriting cards
     file = output_dir / "Chinese/pinyin to handwriting/back.html"
-    new_text = file.read_text().replace("YOUR-SERVER.COM", secrets.server)
+    new_text = file.read_text().replace("YOUR-SERVER.COM", os.environ["SERVER"])
     file.write_text(new_text)
 
 

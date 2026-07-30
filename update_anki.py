@@ -1,8 +1,13 @@
+# /// script
+# requires-python = ">=3.13"
+# dependencies = ["requests"]
+# ///
 """
 Update Anki model templates
 """
 
 from pathlib import Path
+
 import requests
 
 here = Path(__file__).parent
