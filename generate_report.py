@@ -205,12 +205,12 @@ def notes_to_table(notes):
         numtd = td(style="text-align: right")[str(num)]
 
         match note["modelName"]:
-            case "Chinese Simple":
+            case "Chinese Simple" | 'Chinese Example':
                 front = note["fields"]["Front"]["value"]
                 back = note["fields"]["Back"]["value"]
                 return tr[numtd, td[front], td(colspan="3")[back]]
             case "Chinese":
-                field_names = ("Front", "pinyin", "gloss", "example")
+                field_names = ("Front", "pinyin", "gloss")
                 return tr[numtd, (td[note["fields"][n]["value"]] for n in field_names)]
 
     return table[(row(i, n) for i, n in enumerate(notes, 1))]
