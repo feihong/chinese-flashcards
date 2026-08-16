@@ -4,5 +4,6 @@ __pycache__
 
 makemeahanzi/
 _build/
+_test/
 /*.html
 *.json
