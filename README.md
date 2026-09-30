@@ -10,26 +10,29 @@
 - pinyin to handwriting (show strokes)
 - example to speech (read aloud the displayed text)
 
-## System configuration
+## Configuration
 
-Set system voice to Chinese
-
-- System Settings > Accessibility > Spoken Content
-- Set `System speech language` to Chinese
-- Set `System Voice` to Lili
-- Set `Speaking rate` to be a bit slower
-
-Add pinyin input method
-
-- System Settings > Keyboard > Text Input > Input Sources > Edit...
-- Click the `+` button in the lower left corner
-- Chinese, Simplified > Pinyin - Simplified
-- Click `Add`
+- System Settings
+  - Accessibility > Read & Speak
+    - Set `System speech language` to Mandarin
+    - System Voice > ⓘ
+    - Set `Rate` to be a bit slower
+    - Voice > Choose Lilian (Premium)
+- Keyboard > Text Input > Input Sources > Edit...
+    - Click the `+` button in the lower left corner
+    - Chinese, Simplified
+      - Pinyin - Simplified
+      - Shuangpin - Simplified
+    - Click `Add`
+- Anki
+  - Tools > Add-ons > Get Add-ons...
+  - Enter `2055492159` for [AnkiConnect add-on](https://ankiweb.net/shared/info/2055492159)
+  - Click `OK`
 
 ## Sample `.env` file
 
 ```
-SERVER_DIR=yourdomain.com:/home/me/apps/chinese-flashcards
+SERVER_DIR=yourserver..com:/home/me/apps/chinese-flashcards
 SERVER=yourdomain.com
 ```
 
