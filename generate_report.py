@@ -12,35 +12,36 @@ Generate a report summarizing the current state of Chinese flashcards, including
 - TODO: Correctness percentage of mature cards
 """
 
-from pathlib import Path
 from collections import defaultdict
 from collections.abc import Iterable
+from datetime import date, datetime, timedelta
+from pathlib import Path
 from typing import NamedTuple
-from datetime import datetime, date, timedelta
 
-import requests
 import html2text
+import requests
 from htpy import (
-    html,
-    head,
-    meta,
-    title,
-    style,
     body,
+    details,
     h1,
     h2,
-    details,
-    summary,
-    p,
-    ol,
-    ul,
+    head,
+    html,
     li,
+    meta,
+    ol,
+    p,
+    style,
+    summary,
     table,
-    tr,
     td,
+    title,
+    tr,
+    ul,
+)
+from htpy import (
     input as input_,
 )
-
 
 output_file = Path(__file__).parent / "index.html"
 
@@ -164,9 +165,7 @@ def get_new_notes() -> list[dict]:
         "findNotes",
         query="deck:Home added:30",
     )["result"]
-    print(
-        f"Found {len(note_ids)} new notes added within the past 30 days"
-    )
+    print(f"Found {len(note_ids)} new notes added within the past 30 days")
     return invoke("notesInfo", notes=note_ids)["result"]
 
 
@@ -205,7 +204,7 @@ def notes_to_table(notes):
         numtd = td(style="text-align: right")[str(num)]
 
         match note["modelName"]:
-            case "Chinese Simple" | 'Chinese Example':
+            case "Chinese Simple" | "Chinese Example":
                 front = note["fields"]["Front"]["value"]
                 back = note["fields"]["Back"]["value"]
                 return tr[numtd, td[front], td(colspan="3")[back]]
