@@ -66,8 +66,9 @@ class SloppyReviewResult(NamedTuple):
 def main():
     unique_chars = get_unique_chars()
     reviews = get_reviews()
-    sloppy_reviews = get_sloppy_reviews(reviews)
-    mature_correctness = get_mature_correctness(reviews)
+    # sloppy_reviews = get_sloppy_reviews(reviews)
+    # mature_correctness = get_mature_correctness(reviews)
+    sloppy_reviews = mature_correctness = None
     new_notes = get_new_notes()
     test_notes = get_test_notes()
 
@@ -76,38 +77,48 @@ def main():
     )
 
 
-def invoke(action, **params):
-    data = {"action": action, "version": 6}
+def invoke(method, **params):
+    data = {"method": method, "jsonrpc": "2.0", "id": 1}
     if params:
         data["params"] = params
-    r = requests.post("http://127.0.0.1:8765", json=data)
-    return r.json()
+    r = requests.post("http://127.0.0.1:8765/api/v1", json=data)
+    result = r.json()["result"]
+    match method:
+        case "notes.search" | "cards.search":
+            return result["ids"]
+        case "notes.getMany" | "cards.getMany":
+            return [item["result"] for item in result["items"]]
+        case "reviews.list":
+            return result["items"]
+        case _:
+            raise LookupError(f"Unknown API method {method}")
 
 
-def get_unique_chars() -> Iterable[str]:
-    note_ids = invoke("findNotes", query="note:Chinese")["result"]
+def get_unique_chars() -> UniqueCharsResult:
+    note_ids = invoke("notes.search", query="note:Chinese", limit=1000)
     print(f"Found {len(note_ids)} Chinese notes")
-    notes = invoke("notesInfo", notes=note_ids)["result"]
+    notes = invoke("notes.getMany", ids=note_ids)
 
     def gen():
         for note in notes:
-            for c in note["fields"]["Front"]["value"]:
+            for c in note["fields"]["Front"]:
                 if ord(c) > 255:
                     yield c
 
     return UniqueCharsResult(notes_count=len(note_ids), unique_hanzi=sorted(set(gen())))
 
 
-def get_reviews() -> dict[dict]:
-    card_ids = invoke("findCards", query="rated:7")["result"]
+def get_reviews() -> list[dict]:
+    card_ids = invoke("cards.search", query="rated:7")
     print(f"Found {len(card_ids)} cards studied within the past 7 days")
 
-    reviews = invoke("getReviewsOfCards", cards=card_ids)["result"]
+    reviews = invoke("reviews.list", cardIds=card_ids, limit=1000)
     # print(f'Found {len(reviews)} reviews')
     return reviews
 
 
 def get_sloppy_reviews(reviews) -> SloppyReviewResult:
+    # import pdb; pdb.set_trace()
     cr_map = {}  # dict mapping card_id to review time
     shortest_duration = 1_000_000
     for card_id, reviews in reviews.items():
@@ -118,7 +129,7 @@ def get_sloppy_reviews(reviews) -> SloppyReviewResult:
             cr_map[int(card_id)] = review["id"]
 
     card_ids = list(cr_map.keys())
-    cards = invoke("cardsInfo", cards=card_ids)["result"]
+    cards = invoke("cards.getMany", ids=card_ids)
     # Sort by review time, most recent on the top
     cards.sort(key=lambda c: cr_map[c["cardId"]], reverse=True)
     return SloppyReviewResult(shortest_duration=shortest_duration, cards=cards)
@@ -136,7 +147,7 @@ def get_mature_card_items(card_map, cards_map) -> Iterable[(str, bool)]:
         yield f"{front} | {question}", correct
 
 
-def get_mature_correctness(reviews_map):
+def get_mature_correctness(reviews_map) -> Iterable:
     cut_off = date.today() - timedelta(days=7)
     date_map = defaultdict(dict)
     card_ids = set()
@@ -149,7 +160,7 @@ def get_mature_correctness(reviews_map):
                 card_ids.add(card_id)
                 date_map[date_][card_id] = review["lastIvl"] < review["ivl"]
 
-    cards = invoke("cardsInfo", cards=list(card_ids))["result"]
+    cards = invoke("cards.getMany", ids=list(card_ids))
     cards_map = {c["cardId"]: c for c in cards}
 
     def gen():
@@ -162,20 +173,20 @@ def get_mature_correctness(reviews_map):
 
 def get_new_notes() -> list[dict]:
     note_ids = invoke(
-        "findNotes",
-        query="deck:Home added:30",
-    )["result"]
-    print(f"Found {len(note_ids)} new notes added within the past 30 days")
-    return invoke("notesInfo", notes=note_ids)["result"]
+        "notes.search",
+        query="-deck:Test added:30",
+    )
+    print(f"Found {len(note_ids)} new notes added within the past 30 days (that are not in Test deck)")
+    return invoke("notes.getMany", ids=note_ids)
 
 
 def get_test_notes() -> list[dict]:
     note_ids = invoke(
-        "findNotes",
+        "notes.search",
         query="deck:Test",
-    )["result"]
+    )
     print(f"Found {len(note_ids)} notes in Test deck")
-    return invoke("notesInfo", notes=note_ids)["result"]
+    return invoke("notes.getMany", ids=note_ids)
 
 
 def write_to_file(content):
@@ -203,14 +214,14 @@ def notes_to_table(notes):
     def row(num, note):
         numtd = td(style="text-align: right")[str(num)]
 
-        match note["modelName"]:
+        match note["noteType"]["name"]:
             case "Chinese Simple" | "Chinese Example":
-                front = note["fields"]["Front"]["value"]
-                back = note["fields"]["Back"]["value"]
+                front = note["fields"]["Front"]
+                back = note["fields"]["Back"]
                 return tr[numtd, td[front], td(colspan="3")[back]]
             case "Chinese":
                 field_names = ("Front", "pinyin", "gloss")
-                return tr[numtd, (td[note["fields"][n]["value"]] for n in field_names)]
+                return tr[numtd, (td[note["fields"][n]] for n in field_names)]
 
     return table[(row(i, n) for i, n in enumerate(notes, 1))]
 
@@ -236,31 +247,37 @@ def generate_report(
             ", ".join(unique_chars.unique_hanzi),
         ]
 
-        yield h2[f"Sloppy reviews within the past 7 days ({len(sloppy_reviews.cards)})"]
+        if sloppy_reviews:
+            yield h2[
+                f"Sloppy reviews within the past 7 days ({len(sloppy_reviews.cards)})"
+            ]
 
-        yield p[f"Shortest review: {sloppy_reviews.shortest_duration} ms"]
+            yield p[f"Shortest review: {sloppy_reviews.shortest_duration} ms"]
 
-        yield details[
-            summary["Anki query"],
-            input_(
-                readonly=True,
-                size=40,
-                value="cid:" + ",".join(str(c["cardId"]) for c in sloppy_reviews.cards),
-            ),
-        ]
+            yield details[
+                summary["Anki query"],
+                input_(
+                    readonly=True,
+                    size=40,
+                    value="cid:"
+                    + ",".join(str(c["cardId"]) for c in sloppy_reviews.cards),
+                ),
+            ]
 
-        yield ol[
-            (
-                li[f"{c['cardId']}: {html2text.html2text(c['question'])}"]
-                for c in sloppy_reviews.cards
-            )
-        ]
+            yield ol[
+                (
+                    li[f"{c['cardId']}: {html2text.html2text(c['question'])}"]
+                    for c in sloppy_reviews.cards
+                )
+            ]
 
-        yield h2["Correctness rate of mature cards"]
+        if mature_correctness:
+            yield h2["Correctness rate of mature cards"]
 
-        yield [
-            mature_correctness_detail(date, items) for date, items in mature_correctness
-        ]
+            yield [
+                mature_correctness_detail(date, items)
+                for date, items in mature_correctness
+            ]
 
         yield h2[f"Cards added within the past 30 days ({len(new_notes)})"]
 

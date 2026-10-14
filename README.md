@@ -40,7 +40,7 @@ SERVER=yourdomain.com
 
 - [hanzi-flashcards](https://github.com/feihong/hanzi-flashcards)
 - [Make Me a Hanzi animated SVGs](https://github.com/skishore/makemeahanzi/tree/master/svgs)
-- [Anki-Connect add-on](https://git.sr.ht/~foosoft/anki-connect)
+- [Anki-Connect add-on](https://git.sr.ht/~foosoft/anki-connect/tree/master/API_V1.md)
 - [How to use remote debugging in Anki](https://forums.ankiweb.net/t/how-to-see-card-previews-browser-console/16427/2#remote-debugging-2)
 
 ## Notes
