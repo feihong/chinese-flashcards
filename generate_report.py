@@ -66,9 +66,9 @@ class SloppyReviewResult(NamedTuple):
 def main():
     unique_chars = get_unique_chars()
     reviews = get_reviews()
-    # sloppy_reviews = get_sloppy_reviews(reviews)
+    sloppy_reviews = get_sloppy_reviews(reviews)
     # mature_correctness = get_mature_correctness(reviews)
-    sloppy_reviews = mature_correctness = None
+    mature_correctness = None
     new_notes = get_new_notes()
     test_notes = get_test_notes()
 
@@ -78,24 +78,34 @@ def main():
 
 
 def invoke(method, **params):
-    data = {"method": method, "jsonrpc": "2.0", "id": 1}
-    if params:
-        data["params"] = params
-    r = requests.post("http://127.0.0.1:8765/api/v1", json=data)
-    result = r.json()["result"]
-    match method:
-        case "notes.search" | "cards.search":
-            return result["ids"]
-        case "notes.getMany" | "cards.getMany":
-            return [item["result"] for item in result["items"]]
-        case "reviews.list":
-            return result["items"]
-        case _:
-            raise LookupError(f"Unknown API method {method}")
+    data = {"method": method, "jsonrpc": "2.0", "id": 1, "params": params}
+
+    def transform_result(result):
+        match method:
+            case "notes.search" | "cards.search":
+                return result["ids"]
+            case "notes.getMany" | "cards.getMany":
+                return [item["result"] for item in result["items"]]
+            case "reviews.list":
+                return result["items"]
+            case _:
+                raise LookupError(f"Unknown API method {method}")
+
+    def gen():
+        while True:
+            r = requests.post("http://127.0.0.1:8765/api/v1", json=data)
+            result = r.json()["result"]
+            yield from transform_result(result)
+            if (cursor := result.get("nextCursor")) is None:
+                break
+            else:
+                data["params"]["cursor"] = cursor
+
+    return list(gen())
 
 
 def get_unique_chars() -> UniqueCharsResult:
-    note_ids = invoke("notes.search", query="note:Chinese", limit=1000)
+    note_ids = invoke("notes.search", query="note:Chinese")
     print(f"Found {len(note_ids)} Chinese notes")
     notes = invoke("notes.getMany", ids=note_ids)
 
@@ -112,13 +122,12 @@ def get_reviews() -> list[dict]:
     card_ids = invoke("cards.search", query="rated:7")
     print(f"Found {len(card_ids)} cards studied within the past 7 days")
 
-    reviews = invoke("reviews.list", cardIds=card_ids, limit=1000)
-    # print(f'Found {len(reviews)} reviews')
+    reviews = invoke("reviews.list", cardIds=card_ids)
+    print(f"Found {len(reviews)} reviews")
     return reviews
 
 
 def get_sloppy_reviews(reviews) -> SloppyReviewResult:
-    # import pdb; pdb.set_trace()
     cr_map = {}  # dict mapping card_id to review time
     shortest_duration = 1_000_000
     for card_id, reviews in reviews.items():
@@ -176,7 +185,9 @@ def get_new_notes() -> list[dict]:
         "notes.search",
         query="-deck:Test added:30",
     )
-    print(f"Found {len(note_ids)} new notes added within the past 30 days (that are not in Test deck)")
+    print(
+        f"Found {len(note_ids)} new notes added within the past 30 days (that are not in Test deck)"
+    )
     return invoke("notes.getMany", ids=note_ids)
 
 
