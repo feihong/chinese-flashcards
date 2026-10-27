@@ -58,9 +58,14 @@ class UniqueCharsResult(NamedTuple):
     unique_hanzi: Iterable[str]
 
 
+class SloppyReviewCard(NamedTuple):
+    card_id: str
+    question: str
+
+
 class SloppyReviewResult(NamedTuple):
     shortest_duration: int
-    cards: list[dict]
+    cards: list[SloppyReviewCard]
 
 
 def main():
@@ -79,9 +84,12 @@ def main():
 
 def invoke(method, **params):
     data = {"method": method, "jsonrpc": "2.0", "id": 1, "params": params}
+    return_value = {}
 
     def transform_result(result):
         match method:
+            case "cards.render":
+                return result
             case "notes.search" | "cards.search":
                 return result["ids"]
             case "notes.getMany" | "cards.getMany":
@@ -94,18 +102,31 @@ def invoke(method, **params):
     def gen():
         while True:
             r = requests.post("http://127.0.0.1:8765/api/v1", json=data)
+            reply = r.json()
+            if "error" in reply:
+                raise RuntimeError(reply["error"])
+
             result = r.json()["result"]
-            yield from transform_result(result)
+            real_result = transform_result(result)
+            if isinstance(real_result, list):
+                yield from real_result
+            else:
+                return_value["value"] = real_result
+                return
             if (cursor := result.get("nextCursor")) is None:
                 break
             else:
                 data["params"]["cursor"] = cursor
 
-    return list(gen())
+    loop_result = list(gen())
+    if return_value:
+        return return_value["value"]
+    else:
+        return loop_result
 
 
 def get_unique_chars() -> UniqueCharsResult:
-    note_ids = invoke("notes.search", query="note:Chinese")
+    note_ids = invoke("notes.search", query="note:Chinese", limit=1000)
     print(f"Found {len(note_ids)} Chinese notes")
     notes = invoke("notes.getMany", ids=note_ids)
 
@@ -119,7 +140,7 @@ def get_unique_chars() -> UniqueCharsResult:
 
 
 def get_reviews() -> list[dict]:
-    card_ids = invoke("cards.search", query="rated:7")
+    card_ids = invoke("cards.search", query="rated:7", limit=1000)
     print(f"Found {len(card_ids)} cards studied within the past 7 days")
 
     reviews = invoke("reviews.list", cardIds=card_ids)
@@ -128,30 +149,35 @@ def get_reviews() -> list[dict]:
 
 
 def get_sloppy_reviews(reviews) -> SloppyReviewResult:
-    cr_map = {}  # dict mapping card_id to review time
-    shortest_duration = 1_000_000
-    for card_id, reviews in reviews.items():
-        review = reviews[-1]  # only look at latest review
-        shortest_duration = min(shortest_duration, review["time"])
+    card_ids = set()
+    shortest_duration = None
+    now = datetime.now().astimezone()
 
-        if review["time"] < 500:
-            cr_map[int(card_id)] = review["id"]
+    for review in reviews:
+        elapsed = review["elapsedMs"]
+        delta = now - datetime.fromisoformat(review["answeredAt"]).astimezone()
+        if delta.days <= 7 and elapsed < 500:
+            card_ids.add(review["cardId"])
+            shortest_duration = (
+                min(elapsed, shortest_duration)
+                if shortest_duration is not None
+                else elapsed
+            )
 
-    card_ids = list(cr_map.keys())
-    cards = invoke("cards.getMany", ids=card_ids)
-    # Sort by review time, most recent on the top
-    cards.sort(key=lambda c: cr_map[c["cardId"]], reverse=True)
+    cards = invoke("cards.getMany", ids=list(card_ids))
+
+    def get_question(card):
+        render = invoke("cards.render", id=card["id"])
+        return html2text.html2text(render["questionHtml"])
+
+    cards = [SloppyReviewCard(card_id=c["id"], question=get_question(c)) for c in cards]
     return SloppyReviewResult(shortest_duration=shortest_duration, cards=cards)
 
 
 def get_mature_card_items(card_map, cards_map) -> Iterable[(str, bool)]:
     for card_id, correct in card_map.items():
         card = cards_map[card_id]
-        try:
-            front = card["fields"]["Front"]["value"]
-        except:
-            # Cloze cards don't have Front field, but we don't care about them
-            continue
+        front = card["fields"]["Front"]
         question = html2text.html2text(card["question"])
         yield f"{front} | {question}", correct
 
@@ -270,17 +296,11 @@ def generate_report(
                 input_(
                     readonly=True,
                     size=40,
-                    value="cid:"
-                    + ",".join(str(c["cardId"]) for c in sloppy_reviews.cards),
+                    value="cid:" + ",".join(c.card_id for c in sloppy_reviews.cards),
                 ),
             ]
 
-            yield ol[
-                (
-                    li[f"{c['cardId']}: {html2text.html2text(c['question'])}"]
-                    for c in sloppy_reviews.cards
-                )
-            ]
+            yield ol[(li[c.card_id + ": " + c.question] for c in sloppy_reviews.cards)]
 
         if mature_correctness:
             yield h2["Correctness rate of mature cards"]
