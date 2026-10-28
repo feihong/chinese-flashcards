@@ -61,6 +61,7 @@ class UniqueCharsResult(NamedTuple):
 class SloppyReviewCard(NamedTuple):
     card_id: str
     question: str
+    answered_at: datetime
 
 
 class SloppyReviewResult(NamedTuple):
@@ -72,8 +73,7 @@ def main():
     unique_chars = get_unique_chars()
     reviews = get_reviews()
     sloppy_reviews = get_sloppy_reviews(reviews)
-    # mature_correctness = get_mature_correctness(reviews)
-    mature_correctness = None
+    mature_correctness = None  # get_mature_correctness(reviews)
     new_notes = get_new_notes()
     test_notes = get_test_notes()
 
@@ -140,37 +140,57 @@ def get_unique_chars() -> UniqueCharsResult:
 
 
 def get_reviews() -> list[dict]:
+    """
+    Get reviews from past 7 days. Change 'answeredAt' value from string to datetime.
+    """
     card_ids = invoke("cards.search", query="rated:7", limit=1000)
     print(f"Found {len(card_ids)} cards studied within the past 7 days")
 
-    reviews = invoke("reviews.list", cardIds=card_ids)
+    def gen():
+        reviews = invoke("reviews.list", cardIds=card_ids)
+
+        now = datetime.now().astimezone()
+        for review in reviews:
+            dt = datetime.fromisoformat(review["answeredAt"]).astimezone()
+            delta = now - dt
+            if delta.days <= 7:
+                review["answeredAt"] = dt
+                yield review
+
+    reviews = list(gen())
     print(f"Found {len(reviews)} reviews")
-    return reviews
+    return list(gen())
 
 
 def get_sloppy_reviews(reviews) -> SloppyReviewResult:
-    card_ids = set()
+    """
+    Return all cards that were reviewed within the past 7 days and which were seen for less than 500 ms
+    """
+    card_times = {}  # map card ID to when it was reviewed
     shortest_duration = None
-    now = datetime.now().astimezone()
 
     for review in reviews:
         elapsed = review["elapsedMs"]
-        delta = now - datetime.fromisoformat(review["answeredAt"]).astimezone()
-        if delta.days <= 7 and elapsed < 500:
-            card_ids.add(review["cardId"])
+        if elapsed < 500:
+            card_times[review["cardId"]] = review["answeredAt"]
             shortest_duration = (
                 min(elapsed, shortest_duration)
                 if shortest_duration is not None
                 else elapsed
             )
 
-    cards = invoke("cards.getMany", ids=list(card_ids))
+    cards = invoke("cards.getMany", ids=list(card_times.keys()))
 
     def get_question(card):
         render = invoke("cards.render", id=card["id"])
         return html2text.html2text(render["questionHtml"])
 
-    cards = [SloppyReviewCard(card_id=c["id"], question=get_question(c)) for c in cards]
+    cards = [
+        SloppyReviewCard(
+            card_id=c["id"], question=get_question(c), answered_at=card_times[c["id"]]
+        )
+        for c in cards
+    ]
     return SloppyReviewResult(shortest_duration=shortest_duration, cards=cards)
 
 
@@ -182,7 +202,10 @@ def get_mature_card_items(card_map, cards_map) -> Iterable[(str, bool)]:
         yield f"{front} | {question}", correct
 
 
-def get_mature_correctness(reviews_map) -> Iterable:
+def get_mature_correctness(reviews) -> Iterable:
+    """
+    Get the correctness percentage of mature cards (cards whose interval is greater than or equal to 21 days)
+    """
     cut_off = date.today() - timedelta(days=7)
     date_map = defaultdict(dict)
     card_ids = set()
@@ -300,7 +323,12 @@ def generate_report(
                 ),
             ]
 
-            yield ol[(li[c.card_id + ": " + c.question] for c in sloppy_reviews.cards)]
+            yield ol[
+                (
+                    li[f"{c.answered_at:%Y-%m-%d at %I:%M %p}: {c.question}"]
+                    for c in sloppy_reviews.cards
+                )
+            ]
 
         if mature_correctness:
             yield h2["Correctness rate of mature cards"]
