@@ -9,12 +9,12 @@ Generate a report summarizing the current state of Chinese flashcards, including
 - List sloppily-reviewed cards in the past 7 days
 - List new notes added since a specific day in the past
 - List all notes currently in the Test deck
-- TODO: Correctness percentage of mature cards
+- Correctness percentage of mature cards
 """
 
 from collections import defaultdict
 from collections.abc import Iterable
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 from typing import NamedTuple
 
@@ -69,11 +69,60 @@ class SloppyReviewResult(NamedTuple):
     cards: list[SloppyReviewCard]
 
 
+class MatureReview(NamedTuple):
+    card_id: str
+    question: str
+    correct: bool
+
+
+class MatureReviewDay(NamedTuple):
+    date: date
+    reviews: list[MatureReview]
+
+    @property
+    def correctness_rate(self):
+        return sum(mr.correct for mr in self.reviews) / len(self.reviews)
+
+
+class MatureCorrectnessRate:
+    def __init__(self):
+        self.dates = defaultdict(list)  # map date to list[MatureReview]
+
+    def add(self, review):
+        card_id = review["cardId"]
+        mr = MatureReview(
+            card_id=card_id,
+            question=get_question(card_id),
+            correct=review["rating"] != "again",
+        )
+        self.dates[review["answeredAt"].date()].append(mr)
+
+    @property
+    def correctness_rate(self):
+        count = correct = 0
+
+        for reviews in self.dates.values():
+            for mr in reviews:
+                count += 1
+                correct += mr.correct
+
+        return correct / count
+
+    @property
+    def days(self):
+        """
+        Return list[(date, list[MatureReview])]
+        """
+        items = [MatureReviewDay(date_, reviews) for date_, reviews in self.dates.items()]
+        items.sort(key=lambda mrd: mrd.date)
+        return items
+
+
 def main():
     unique_chars = get_unique_chars()
     reviews = get_reviews()
     sloppy_reviews = get_sloppy_reviews(reviews)
-    mature_correctness = None  # get_mature_correctness(reviews)
+    mature_correctness = get_mature_correctness(reviews)
     new_notes = get_new_notes()
     test_notes = get_test_notes()
 
@@ -162,6 +211,11 @@ def get_reviews() -> list[dict]:
     return list(gen())
 
 
+def get_question(card_id):
+    render = invoke("cards.render", id=card_id)
+    return html2text.html2text(render["questionHtml"])
+
+
 def get_sloppy_reviews(reviews) -> SloppyReviewResult:
     """
     Return all cards that were reviewed within the past 7 days and which were seen for less than 500 ms
@@ -181,52 +235,27 @@ def get_sloppy_reviews(reviews) -> SloppyReviewResult:
 
     cards = invoke("cards.getMany", ids=list(card_times.keys()))
 
-    def get_question(card):
-        render = invoke("cards.render", id=card["id"])
-        return html2text.html2text(render["questionHtml"])
-
     cards = [
         SloppyReviewCard(
-            card_id=c["id"], question=get_question(c), answered_at=card_times[c["id"]]
+            card_id=c["id"],
+            question=get_question(c["id"]),
+            answered_at=card_times[c["id"]],
         )
         for c in cards
     ]
     return SloppyReviewResult(shortest_duration=shortest_duration, cards=cards)
 
 
-def get_mature_card_items(card_map, cards_map) -> Iterable[(str, bool)]:
-    for card_id, correct in card_map.items():
-        card = cards_map[card_id]
-        front = card["fields"]["Front"]
-        question = html2text.html2text(card["question"])
-        yield f"{front} | {question}", correct
-
-
 def get_mature_correctness(reviews) -> Iterable:
     """
     Get the correctness percentage of mature cards (cards whose interval is greater than or equal to 21 days)
     """
-    cut_off = date.today() - timedelta(days=7)
-    date_map = defaultdict(dict)
-    card_ids = set()
-
-    for card_id, reviews in reviews_map.items():
-        for review in reviews:
-            date_ = (datetime.fromtimestamp(review["id"] / 1000)).date()
-            if review["lastIvl"] >= 21 and date_ >= cut_off:
-                card_id = int(card_id)
-                card_ids.add(card_id)
-                date_map[date_][card_id] = review["lastIvl"] < review["ivl"]
-
-    cards = invoke("cards.getMany", ids=list(card_ids))
-    cards_map = {c["cardId"]: c for c in cards}
-
-    def gen():
-        date_lst = sorted(date_map.items(), key=lambda p: p[0])
-        for date, card_map in date_lst:
-            yield date, list(get_mature_card_items(card_map, cards_map))
-
-    return gen()
+    res = MatureCorrectnessRate()
+    for review in reviews:
+        ivl = review["previousInterval"]
+        if ivl["unit"] == "days" and ivl["value"] >= 21:
+            res.add(review)
+    return res
 
 
 def get_new_notes() -> list[dict]:
@@ -286,13 +315,15 @@ def notes_to_table(notes):
     return table[(row(i, n) for i, n in enumerate(notes, 1))]
 
 
-def mature_correctness_detail(date, items):
-    correct = sum(item[1] for item in items)
-    total = len(items)
-
+def mature_correctness_detail(day: MatureReviewDay):
     return details[
-        summary[f"{date.isoformat()} ({correct / total * 100:0.0f})%"],
-        ul[(li[f"{label} {'✅' if correct else '❌'}"] for label, correct in items)],
+        summary[f"{day.date.isoformat()} ({day.correctness_rate * 100:0.0f})%"],
+        ul[
+            (
+                li[f"{review.question} {'✅' if review.correct else '❌'}"]
+                for review in day.reviews
+            )
+        ],
     ]
 
 
@@ -333,10 +364,11 @@ def generate_report(
         if mature_correctness:
             yield h2["Correctness rate of mature cards"]
 
-            yield [
-                mature_correctness_detail(date, items)
-                for date, items in mature_correctness
+            yield p[
+                f"Mature correctness rate over the past 7 days: {mature_correctness.correctness_rate * 100:0.0f}%"
             ]
+
+            yield [mature_correctness_detail(day) for day in mature_correctness.days]
 
         yield h2[f"Cards added within the past 30 days ({len(new_notes)})"]
 
