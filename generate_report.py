@@ -45,7 +45,6 @@ from htpy import (
 
 output_file = Path(__file__).parent / "index.html"
 
-
 STYLE = """
 body { margin: 1em; }
 table { border-collapse: collapse; }
@@ -80,7 +79,7 @@ class MatureReviewDay(NamedTuple):
     reviews: list[MatureReview]
 
     @property
-    def correctness_rate(self):
+    def correctness_rate(self) -> float:
         return sum(mr.correct for mr in self.reviews) / len(self.reviews)
 
 
@@ -98,7 +97,7 @@ class MatureCorrectnessRate:
         self.dates[review["answeredAt"].date()].append(mr)
 
     @property
-    def correctness_rate(self):
+    def correctness_rate(self) -> float:
         count = correct = 0
 
         for reviews in self.dates.values():
@@ -109,9 +108,9 @@ class MatureCorrectnessRate:
         return correct / count
 
     @property
-    def days(self):
+    def days(self) -> list[MatureReviewDay]:
         """
-        Return list[(date, list[MatureReview])]
+        Return list[MatureReviewDay]
         """
         items = [MatureReviewDay(date_, reviews) for date_, reviews in self.dates.items()]
         items.sort(key=lambda mrd: mrd.date)
@@ -133,7 +132,7 @@ def main():
 
 def invoke(method, **params):
     data = {"method": method, "jsonrpc": "2.0", "id": 1, "params": params}
-    return_value = {}
+    return_value = []
 
     def transform_result(result):
         match method:
@@ -160,7 +159,7 @@ def invoke(method, **params):
             if isinstance(real_result, list):
                 yield from real_result
             else:
-                return_value["value"] = real_result
+                return_value.append(real_result)
                 return
             if (cursor := result.get("nextCursor")) is None:
                 break
@@ -168,8 +167,8 @@ def invoke(method, **params):
                 data["params"]["cursor"] = cursor
 
     loop_result = list(gen())
-    if return_value:
-        return return_value["value"]
+    if len(return_value) > 0:
+        return return_value[0]
     else:
         return loop_result
 
@@ -190,10 +189,10 @@ def get_unique_chars() -> UniqueCharsResult:
 
 def get_reviews() -> list[dict]:
     """
-    Get reviews from past 7 days. Change 'answeredAt' value from string to datetime.
+    Get reviews from past 10 days. Change 'answeredAt' value from string to datetime.
     """
-    card_ids = invoke("cards.search", query="rated:7", limit=1000)
-    print(f"Found {len(card_ids)} cards studied within the past 7 days")
+    card_ids = invoke("cards.search", query="rated:10", limit=1000)
+    print(f"Found {len(card_ids)} cards studied within the past 10 days")
 
     def gen():
         reviews = invoke("reviews.list", cardIds=card_ids)
@@ -202,7 +201,7 @@ def get_reviews() -> list[dict]:
         for review in reviews:
             dt = datetime.fromisoformat(review["answeredAt"]).astimezone()
             delta = now - dt
-            if delta.days <= 7:
+            if delta.days <= 10:
                 review["answeredAt"] = dt
                 yield review
 
