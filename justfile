@@ -21,8 +21,13 @@ build:
 clean:
 	rm -rf _build/*
 
+# Update all custom Anki note type templates
 update: build
 	uv run update_anki.py
+
+# Dump Anki-Connect API description to api.json
+api_describe:
+    curl -s --json '{"method": "api.describe", "jsonrpc": "2.0", "id": 1}' http://127.0.0.1:8765/api/v1 | jq . > api.json
 
 story:
 	python generate_story_prompt.py
