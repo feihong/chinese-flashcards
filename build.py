@@ -6,7 +6,7 @@ import os
 import re
 from pathlib import Path
 
-version = "2.2.0"
+version = "2.3.0"
 here = Path(__file__).parent
 source_dirs = ["Chinese", "Chinese Simple", "Chinese Example"]
 source_dirs = [here / d for d in source_dirs]

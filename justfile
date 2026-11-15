@@ -21,13 +21,13 @@ build:
 clean:
 	rm -rf _build/*
 
-# Update all custom Anki note type templates
+# Update templates for custom Anki note types
 update: build
 	uv run update_anki.py
 
-# Dump Anki-Connect API description to api.json
-api_describe:
-    curl -s --json '{"method": "api.describe", "jsonrpc": "2.0", "id": 1}' http://127.0.0.1:8765/api/v1 | jq . > api.json
+# Dump Anki-Connect API output to result.json
+api_info:
+    uv run api_info.py
 
 story:
 	python generate_story_prompt.py
@@ -41,9 +41,11 @@ examples:
 explore:
     uv run anki_connect_explorer.py
 
+# Generate Anki practice stats report
 report:
 	uv run --env-file .env generate_report.py
 
+# Upload report to your server
 publish_report: report
     rsync -avz index.html $SERVER_DIR
 
