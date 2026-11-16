@@ -47,7 +47,7 @@
     localStorage.setItem(voiceNameKey, voicesSelect.value)
   }
 
-  rootEl.querySelector('button').onclick = async () => {
+  const speak = async () => {
     const voiceName = localStorage.getItem(voiceNameKey)
     const voice = await getVoice(voiceName)
     console.log('Using', voice)
@@ -57,6 +57,18 @@
     utterance.voice = voice
     utterance.rate = 0.5
     speechSynthesis.speak(utterance)
+  }
+
+  rootEl.querySelector('button').onclick = speak
+
+  const inputEl = rootEl.querySelector('input')
+  if (inputEl) {
+    inputEl.onkeydown = (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        speak()
+      }
+    }
   }
 
   const main = async () => {

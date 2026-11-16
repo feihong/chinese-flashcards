@@ -14,18 +14,18 @@
   const inputEl = rootEl.querySelector('input')
   const text = rootEl.dataset.word
 
-  if (text.length > 15) {
-    const textArr = Array.from(text)
-    let removed = 0
-    while (removed < 10) {
-      const i = Math.floor(Math.random() * textArr.length)
-      // Don't remove punctuation characters
-      if (textArr[i].match(/[。！？,、]/)) continue
-      textArr.splice(i, 1)
-      removed++
-    }
-    inputEl.value = textArr.join('')
+  // Remove half the characters, but never more than 10
+  let removed = Math.min(Math.ceil(text.length / 2), 10)
+  const textArr = Array.from(text)
+
+  while (removed > 0) {
+    const i = Math.floor(Math.random() * textArr.length)
+    // Don't remove punctuation characters
+    if (textArr[i].match(/[。！？,、]/)) continue
+    textArr.splice(i, 1)
+    removed--
   }
+  inputEl.value = textArr.join('')
 }
 </script>
 <script src="../../flashcard-lib/speech.js"></script>

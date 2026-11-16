@@ -1,9 +1,8 @@
 # /// script
-# requires-python = ">=3.13"
 # dependencies = ["requests"]
 # ///
 """
-Update Anki model templates
+Update the templates for Anki note types
 """
 
 from pathlib import Path
@@ -12,39 +11,49 @@ import requests
 
 here = Path(__file__).parent
 build_dir = here / "_build"
+note_type_names = [p.name for p in Path(__file__).parent.glob("Chinese*") if p.is_dir()]
 
 
-def invoke(action, **params):
-    data = {"action": action, "version": 6}
-    if params:
-        data["params"] = params
-    r = requests.post("http://127.0.0.1:8765", json=data)
+def invoke(method, **params):
+    data = {"method": method, "jsonrpc": "2.0", "id": 1, "params": params}
+    r = requests.post("http://127.0.0.1:8765/api/v1", json=data)
     return r.json()
 
 
-def get_model_templates(model_dir: Path):
-    for dir in model_dir.iterdir():
-        if not dir.is_dir():
-            continue
-        front = (dir / "front.html").read_text()
-        back = (dir / "back.html").read_text()
-        yield dir.name, {"Front": front, "Back": back}
+def get_note_type_edits(model_dir: Path):
+    def gen():
+        for dir in model_dir.iterdir():
+            if not dir.is_dir():
+                continue
+
+            yield {
+                "op": "updateTemplate",
+                "name": dir.name,
+                "patch": {
+                    "questionHtml": (dir / "front.html").read_text(),
+                    "answerHtml": (dir / "back.html").read_text(),
+                },
+            }
+
+    return list(gen())
 
 
-def update_model_template(model_dir: Path):
-    model_name = model_dir.name
+def update_note_type(note_type_dir: Path):
+    name = note_type_dir.name
 
-    model = {
-        "name": model_name,
-        "templates": dict(get_model_templates(model_dir)),
-    }
-    result = invoke("updateModelTemplates", model=model)
-    if error := result["error"]:
-        print(error)
+    print(f'Updating {name}')
+    result = invoke(
+        "noteTypes.editStructure",
+        noteType={
+            "name": name,
+        },
+        edits=get_note_type_edits(note_type_dir),
+    )
+    if error := result.get('error'):
+        raise Exception(error)
     else:
-        print(f"Updated template for {model_name}")
+        print(f"Updated template for {name}")
 
 
-update_model_template(build_dir / "Chinese")
-update_model_template(build_dir / "Chinese Simple")
-update_model_template(build_dir / "Chinese Example")
+for name in note_type_names:
+    update_note_type(build_dir / name)
